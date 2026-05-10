@@ -21,6 +21,22 @@ class AddressResult(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class RouteStop(BaseModel):
+    index: int
+    address: str
+
+
+class RouteOptimizeRequest(BaseModel):
+    stops: list[RouteStop] = Field(default_factory=list, min_length=1)
+    notes: str = ""
+    locale: Locale = "ja"
+
+
+class RouteOptimizeResult(BaseModel):
+    ordered_indices: list[int] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
 ERROR_MESSAGES = {
     "ja": {
         "image_required": "画像ファイルを送信してください",
@@ -28,6 +44,9 @@ ERROR_MESSAGES = {
         "image_too_large": "画像サイズは8MB以下にしてください",
         "ai_failed": "AI解析に失敗しました",
         "json_failed": "AIの返答を住所として解析できませんでした",
+        "route_required": "住所を2件以上入力してください",
+        "route_failed": "AI順路作成に失敗しました",
+        "route_json_failed": "AIの返答を順路として解析できませんでした",
     },
     "en": {
         "image_required": "Please upload an image file",
@@ -35,6 +54,9 @@ ERROR_MESSAGES = {
         "image_too_large": "Image size must be 8MB or less",
         "ai_failed": "AI analysis failed",
         "json_failed": "Could not parse the AI response as an address",
+        "route_required": "Please provide at least two addresses",
+        "route_failed": "AI route optimization failed",
+        "route_json_failed": "Could not parse the AI response as a route",
     },
 }
 
@@ -99,6 +121,46 @@ For Japanese addresses, preserve Japanese address order and use standard Japanes
 """.strip()
 
 
+def build_route_prompt(stops: list[RouteStop], notes: str, locale: Locale) -> str:
+    response_language = "Japanese" if locale == "ja" else "English"
+    stops_json = json.dumps([stop.model_dump() for stop in stops], ensure_ascii=False)
+    return f"""
+You are planning a practical driving route for delivery or field visits.
+Return JSON only. Do not wrap it in Markdown.
+Use every stop index exactly once. Do not invent, remove, or duplicate stops.
+Respect the user's notes as much as possible, especially time windows, priority, and constraints.
+Write notes in {response_language}.
+
+Stops:
+{stops_json}
+
+User notes:
+{notes or "(none)"}
+
+Expected schema:
+{{
+  "ordered_indices": [0, 1, 2],
+  "notes": ["short explanation or warnings"]
+}}
+""".strip()
+
+
+def normalize_order(requested_order: list[int], stops: list[RouteStop]) -> list[int]:
+    known_indices = [stop.index for stop in stops]
+    known_set = set(known_indices)
+    order: list[int] = []
+
+    for index in requested_order:
+        if index in known_set and index not in order:
+            order.append(index)
+
+    for index in known_indices:
+        if index not in order:
+            order.append(index)
+
+    return order
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -109,7 +171,7 @@ def health_config() -> dict[str, str | bool]:
     return {
         "status": "ok",
         "openai_api_key_configured": bool(os.getenv("OPENAI_API_KEY")),
-        "openai_model": os.getenv("OPENAI_MODEL", "gpt-5.2"),
+        "openai_model": os.getenv("OPENAI_MODEL", "gpt-5.5"),
         "route_snap_api_token_configured": bool(os.getenv("ROUTE_SNAP_API_TOKEN")),
     }
 
@@ -138,7 +200,7 @@ async def parse_address(
     data_url = f"data:{image.content_type};base64,{encoded}"
 
     client = OpenAI(api_key=api_key)
-    model = os.getenv("OPENAI_MODEL", "gpt-5.2")
+    model = os.getenv("OPENAI_MODEL", "gpt-5.5")
 
     try:
         response = client.responses.create(
@@ -162,4 +224,46 @@ async def parse_address(
         return AddressResult.model_validate(payload)
     except Exception as exc:
         detail = f"{error_message(active_locale, 'json_failed')}: {exc}"
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+
+@app.post("/api/optimize-route", response_model=RouteOptimizeResult)
+def optimize_route(
+    payload: RouteOptimizeRequest,
+    x_route_snap_token: str | None = Header(default=None),
+) -> RouteOptimizeResult:
+    active_locale = normalize_locale(payload.locale)
+    verify_api_token(x_route_snap_token)
+
+    stops = [stop for stop in payload.stops if stop.address.strip()]
+    if len(stops) < 2:
+        raise HTTPException(status_code=400, detail=error_message(active_locale, "route_required"))
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail=error_message(active_locale, "api_key_missing"))
+
+    client = OpenAI(api_key=api_key)
+    model = os.getenv("OPENAI_MODEL", "gpt-5.5")
+
+    try:
+        response = client.responses.create(
+            model=model,
+            input=[
+                {
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": build_route_prompt(stops, payload.notes, active_locale)}],
+                }
+            ],
+        )
+    except Exception as exc:
+        detail = f"{error_message(active_locale, 'route_failed')}: {exc}"
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+    try:
+        result = RouteOptimizeResult.model_validate(extract_json(response.output_text))
+        result.ordered_indices = normalize_order(result.ordered_indices, stops)
+        return result
+    except Exception as exc:
+        detail = f"{error_message(active_locale, 'route_json_failed')}: {exc}"
         raise HTTPException(status_code=502, detail=detail) from exc

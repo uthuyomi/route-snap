@@ -20,6 +20,7 @@ import {
   XCircle
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Locale = "ja" | "en";
@@ -328,6 +329,15 @@ export default function Home() {
           </div>
 
           <div className="inline-flex shrink-0 items-center gap-2">
+            <Link
+              className="inline-flex h-14 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 text-sm font-semibold text-neutral-900 shadow-sm transition hover:border-neutral-400 hover:bg-neutral-50 active:scale-[0.98]"
+              href="/batch"
+              aria-label="複数住所ページを開く"
+              title="複数住所ページを開く"
+            >
+              <Navigation size={18} aria-hidden="true" />
+              <span>複数</span>
+            </Link>
             <span className="hidden rounded-full border border-neutral-300 bg-white px-3 py-1 text-xs font-semibold text-neutral-600 sm:inline-flex">
               {t.badge}
             </span>
