@@ -115,7 +115,7 @@ async def parse_address(
     data_url = f"data:{image.content_type};base64,{encoded}"
 
     client = OpenAI(api_key=api_key)
-    model = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+    model = os.getenv("OPENAI_MODEL", "gpt-5.5")
 
     try:
         response = client.responses.create(

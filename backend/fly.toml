@@ -10,16 +10,23 @@ primary_region = 'nrt'
   dockerfile = 'Dockerfile'
 
 [env]
-  ALLOWED_ORIGINS = 'https://route-snap-frontend.fly.dev'
-  OPENAI_MODEL = 'gpt-5-mini'
+  ALLOWED_ORIGINS = 'https://route-snap-frontend.fly.dev,https://route-snap.vercel.app'
+  OPENAI_MODEL = 'gpt-5.5'
 
 [http_service]
-  internal_port = 8080
+  internal_port = 8000
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
   processes = ['app']
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
 
 [[vm]]
   memory = '512mb'

@@ -17,7 +17,7 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 $env:OPENAI_API_KEY="sk-proj-..."
-$env:OPENAI_MODEL="gpt-5-mini"
+$env:OPENAI_MODEL="gpt-5.5"
 $env:ALLOWED_ORIGINS="http://localhost:3000"
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
