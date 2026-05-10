@@ -4,10 +4,8 @@ primary_region = "nrt"
 [build]
   dockerfile = "Dockerfile"
 
-[build.args]
-  NEXT_PUBLIC_API_BASE_URL = "https://route-snap-backend.fly.dev"
-
 [env]
+  BACKEND_API_BASE_URL = "https://route-snap-backend.fly.dev"
   PORT = "3000"
 
 [http_service]

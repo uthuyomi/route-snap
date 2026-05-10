@@ -19,6 +19,7 @@ pip install -r requirements.txt
 $env:OPENAI_API_KEY="sk-proj-..."
 $env:OPENAI_MODEL="gpt-5.2"
 $env:ALLOWED_ORIGINS="http://localhost:3000"
+$env:ROUTE_SNAP_API_TOKEN="replace-with-random-secret"
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -27,7 +28,8 @@ Frontend:
 ```powershell
 cd frontend
 npm install
-$env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+$env:BACKEND_API_BASE_URL="http://localhost:8000"
+$env:ROUTE_SNAP_API_TOKEN="replace-with-same-random-secret"
 npm run dev
 ```
 
@@ -42,7 +44,8 @@ If your PC LAN IP is `192.168.0.10`, use:
 $env:ALLOWED_ORIGINS="http://192.168.0.10:3000"
 
 # frontend
-$env:NEXT_PUBLIC_API_BASE_URL="http://192.168.0.10:8000"
+$env:BACKEND_API_BASE_URL="http://192.168.0.10:8000"
+$env:ROUTE_SNAP_API_TOKEN="replace-with-same-random-secret"
 ```
 
 Then open `http://192.168.0.10:3000` on your phone.
@@ -62,6 +65,7 @@ Backend:
 cd backend
 fly launch --no-deploy
 fly secrets set OPENAI_API_KEY="sk-proj-..."
+fly secrets set ROUTE_SNAP_API_TOKEN="replace-with-random-secret"
 fly deploy
 ```
 
@@ -76,7 +80,8 @@ fly deploy
 For production, set these values to match your Fly app names:
 
 - `backend/fly.toml`: `ALLOWED_ORIGINS = "https://your-frontend.fly.dev"`
-- `frontend/fly.toml`: `NEXT_PUBLIC_API_BASE_URL = "https://your-backend.fly.dev"`
+- Frontend server env: `BACKEND_API_BASE_URL = "https://your-backend.fly.dev"`
+- Frontend server secret: `ROUTE_SNAP_API_TOKEN` must match the backend secret
 
 ## Notes
 

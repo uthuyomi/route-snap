@@ -47,8 +47,6 @@ type InstallActionProps = {
   onLaunch: () => void;
 };
 
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-
 const messages = {
   ja: {
     subtitle: "住所を撮影してナビへ",
@@ -287,7 +285,7 @@ export default function Home() {
       formData.append("image", imageFile);
       formData.append("locale", locale);
 
-      const response = await fetch(`${apiBaseUrl}/api/parse-address`, {
+      const response = await fetch("/api/parse-address", {
         method: "POST",
         body: formData
       });

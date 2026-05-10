@@ -1,10 +1,11 @@
 import base64
+import hmac
 import json
 import os
 import re
 from typing import Any, Literal
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel, Field
@@ -60,6 +61,14 @@ def error_message(locale: Locale, key: str) -> str:
     return ERROR_MESSAGES[locale][key]
 
 
+def verify_api_token(provided_token: str | None) -> None:
+    expected_token = os.getenv("ROUTE_SNAP_API_TOKEN")
+    if not expected_token:
+        return
+    if not provided_token or not hmac.compare_digest(provided_token, expected_token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
 def extract_json(text: str) -> dict[str, Any]:
     try:
         return json.loads(text)
@@ -101,6 +110,7 @@ def health_config() -> dict[str, str | bool]:
         "status": "ok",
         "openai_api_key_configured": bool(os.getenv("OPENAI_API_KEY")),
         "openai_model": os.getenv("OPENAI_MODEL", "gpt-5.2"),
+        "route_snap_api_token_configured": bool(os.getenv("ROUTE_SNAP_API_TOKEN")),
     }
 
 
@@ -108,8 +118,10 @@ def health_config() -> dict[str, str | bool]:
 async def parse_address(
     image: UploadFile = File(...),
     locale: str = Form(default="ja"),
+    x_route_snap_token: str | None = Header(default=None),
 ) -> AddressResult:
     active_locale = normalize_locale(locale)
+    verify_api_token(x_route_snap_token)
 
     if not image.content_type or not image.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail=error_message(active_locale, "image_required"))
