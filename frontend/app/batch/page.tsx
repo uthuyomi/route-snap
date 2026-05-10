@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   ArrowUpDown,
   Bot,
   Check,
@@ -10,13 +9,12 @@ import {
   ImagePlus,
   Loader2,
   Navigation,
-  Route,
   Trash2,
   Upload,
   XCircle
 } from "lucide-react";
-import Link from "next/link";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { AppHeader, AppLocale } from "../components/AppHeader";
 
 type StopStatus = "ready" | "reading" | "error";
 type RouteMode = "file" | "ai";
@@ -39,6 +37,62 @@ type OptimizeResult = {
   ordered_indices: number[];
   notes: string[];
 };
+
+const messages = {
+  ja: {
+    readingImage: "画像を解析中",
+    imageFailed: "画像から住所を読み取れませんでした",
+    imageAnalyzeFailed: "画像解析に失敗しました",
+    confidence: "信頼度",
+    noAddressInFile: "住所らしい行が見つかりませんでした",
+    fileReadFailed: "ファイルの読み込みに失敗しました",
+    needTwoStops: "順路作成には住所が2件以上必要です",
+    aiRouteFailed: "AI順路作成に失敗しました",
+    addFiles: "画像・ファイルを追加",
+    imageOcr: "画像OCR",
+    aiNotes: "AIへの備考",
+    notesPlaceholder: "例: 10時までに新宿、午後は渋谷方面を優先。高速道路は避けたい。",
+    address: "住所",
+    delete: "削除",
+    empty: "住所が入った画像、TXT、CSV、TSV、JSONを追加してください",
+    fileOrder: "ファイル内の順番通り",
+    aiOrder: "AIで移動順を最適化",
+    openMaps: "Google Mapsで一括ルート作成",
+    routeOrder: "ルート順",
+    countUnit: "件",
+    emptyOrder: "住所を追加すると順番が表示されます",
+    mapsLimit: "Google Mapsの仕様上、経由地が多い場合は一部が反映されないことがあります。その場合は住所リストを分割してください。"
+  },
+  en: {
+    readingImage: "Reading image",
+    imageFailed: "Could not read an address from the image",
+    imageAnalyzeFailed: "Image analysis failed",
+    confidence: "Confidence",
+    noAddressInFile: "No address-like lines were found",
+    fileReadFailed: "Could not read the file",
+    needTwoStops: "At least two addresses are required to create a route",
+    aiRouteFailed: "AI route planning failed",
+    addFiles: "Add images or files",
+    imageOcr: "Image OCR",
+    aiNotes: "Notes for AI",
+    notesPlaceholder: "Example: Reach Shinjuku by 10:00, prioritize Shibuya in the afternoon, avoid highways.",
+    address: "Address",
+    delete: "Delete",
+    empty: "Add images, TXT, CSV, TSV, or JSON files containing addresses",
+    fileOrder: "Use order inside file",
+    aiOrder: "Optimize travel order with AI",
+    openMaps: "Create route in Google Maps",
+    routeOrder: "Route Order",
+    countUnit: "stops",
+    emptyOrder: "The route order appears after you add addresses",
+    mapsLimit: "Google Maps may ignore some waypoints when there are many stops. Split the address list if needed."
+  }
+} satisfies Record<AppLocale, Record<string, string>>;
+
+function getInitialLocale(): AppLocale {
+  if (typeof navigator === "undefined") return "ja";
+  return navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en";
+}
 
 function createId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -122,6 +176,7 @@ function buttonClass(active = true) {
 
 export default function BatchRoutePage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [locale, setLocale] = useState<AppLocale>(() => getInitialLocale());
   const [stops, setStops] = useState<BatchStop[]>([]);
   const [routeOrderIds, setRouteOrderIds] = useState<string[]>([]);
   const [routeMode, setRouteMode] = useState<RouteMode>("file");
@@ -130,6 +185,7 @@ export default function BatchRoutePage() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeNotes, setRouteNotes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const t = messages[locale];
 
   const usableStops = useMemo(() => stops.filter((stop) => stop.address.trim()), [stops]);
   const orderedStops = useMemo(() => {
@@ -156,13 +212,13 @@ export default function BatchRoutePage() {
         sourceName: file.name,
         address: "",
         status: "reading",
-        note: "画像を解析中"
+        note: t.readingImage
       }
     ]);
 
     const formData = new FormData();
     formData.append("image", file);
-    formData.append("locale", "ja");
+    formData.append("locale", locale);
 
     try {
       const response = await fetch("/api/parse-address", {
@@ -171,7 +227,7 @@ export default function BatchRoutePage() {
       });
       const payload = (await response.json()) as AddressResult & { detail?: string };
       if (!response.ok) {
-        throw new Error(payload.detail ?? "画像から住所を読み取れませんでした");
+        throw new Error(payload.detail ?? t.imageFailed);
       }
       setStops((current) =>
         current.map((stop) =>
@@ -180,7 +236,7 @@ export default function BatchRoutePage() {
                 ...stop,
                 address: payload.normalized_address,
                 status: payload.normalized_address ? "ready" : "error",
-                note: payload.notes?.join(" / ") || `信頼度 ${Math.round((payload.confidence ?? 0) * 100)}%`
+                note: payload.notes?.join(" / ") || `${t.confidence} ${Math.round((payload.confidence ?? 0) * 100)}%`
               }
             : stop
         )
@@ -192,7 +248,7 @@ export default function BatchRoutePage() {
             ? {
                 ...stop,
                 status: "error",
-                note: caught instanceof Error ? caught.message : "画像解析に失敗しました"
+                note: caught instanceof Error ? caught.message : t.imageAnalyzeFailed
               }
             : stop
         )
@@ -211,7 +267,7 @@ export default function BatchRoutePage() {
           sourceName: file.name,
           address: "",
           status: "error",
-          note: "住所らしい行が見つかりませんでした"
+          note: t.noAddressInFile
         }
       ]);
       return;
@@ -238,7 +294,7 @@ export default function BatchRoutePage() {
       setRouteMode("file");
       setRouteOrderIds([]);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "ファイルの読み込みに失敗しました");
+      setError(caught instanceof Error ? caught.message : t.fileReadFailed);
     } finally {
       setIsReading(false);
       clearInput();
@@ -263,7 +319,7 @@ export default function BatchRoutePage() {
 
   async function optimizeRoute() {
     if (usableStops.length < 2) {
-      setError("順路作成には住所が2件以上必要です");
+      setError(t.needTwoStops);
       return;
     }
 
@@ -278,7 +334,7 @@ export default function BatchRoutePage() {
           "content-type": "application/json"
         },
         body: JSON.stringify({
-          locale: "ja",
+          locale,
           notes,
           stops: usableStops.map((stop, index) => ({
             index,
@@ -288,13 +344,13 @@ export default function BatchRoutePage() {
       });
       const payload = (await response.json()) as OptimizeResult & { detail?: string };
       if (!response.ok) {
-        throw new Error(payload.detail ?? "AI順路作成に失敗しました");
+        throw new Error(payload.detail ?? t.aiRouteFailed);
       }
       setRouteMode("ai");
       setRouteOrderIds(payload.ordered_indices.map((index) => usableStops[index]?.id).filter((id): id is string => Boolean(id)));
       setRouteNotes(payload.notes ?? []);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "AI順路作成に失敗しました");
+      setError(caught instanceof Error ? caught.message : t.aiRouteFailed);
     } finally {
       setIsOptimizing(false);
     }
@@ -308,21 +364,7 @@ export default function BatchRoutePage() {
   return (
     <main className="min-h-svh bg-neutral-100 px-4 py-4 text-neutral-950 sm:px-6 lg:py-8">
       <div className="mx-auto grid w-full max-w-6xl gap-4">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex min-w-0 items-center gap-3">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-neutral-950 text-white shadow-sm">
-              <Route size={22} aria-hidden="true" />
-            </span>
-            <div className="min-w-0">
-              <h1 className="m-0 text-lg font-bold leading-6">Route Snap Batch</h1>
-              <p className="m-0 truncate text-xs font-medium text-neutral-500">画像・ファイルから複数住所をまとめてルート化</p>
-            </div>
-          </div>
-          <Link className={buttonClass()} href="/" aria-label="単発ページへ戻る" title="単発ページへ戻る">
-            <ArrowLeft size={18} aria-hidden="true" />
-            <span>単発</span>
-          </Link>
-        </header>
+        <AppHeader locale={locale} currentPage="batch" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
           <section className="grid gap-3 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm">
@@ -333,7 +375,7 @@ export default function BatchRoutePage() {
                 onClick={() => inputRef.current?.click()}
               >
                 <Upload size={24} aria-hidden="true" />
-                <span>画像・ファイルを追加</span>
+                <span>{t.addFiles}</span>
               </button>
               <input
                 ref={inputRef}
@@ -350,7 +392,7 @@ export default function BatchRoutePage() {
                 </div>
                 <div className="grid h-14 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600">
                   <ImagePlus size={18} aria-hidden="true" />
-                  <span>画像OCR</span>
+                  <span>{t.imageOcr}</span>
                 </div>
               </div>
             </div>
@@ -358,13 +400,13 @@ export default function BatchRoutePage() {
             <label className="grid gap-2">
               <span className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700">
                 <Bot size={17} aria-hidden="true" />
-                AIへの備考
+                {t.aiNotes}
               </span>
               <textarea
                 className="min-h-24 w-full resize-y rounded-lg border border-neutral-300 bg-white p-3 text-base leading-6 outline-none transition placeholder:text-neutral-400 focus:border-neutral-700"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
-                placeholder="例: 10時までに新宿、午後は渋谷方面を優先。高速道路は避けたい。"
+                placeholder={t.notesPlaceholder}
                 rows={3}
               />
             </label>
@@ -379,21 +421,21 @@ export default function BatchRoutePage() {
                         className="h-11 rounded-lg border border-neutral-300 bg-white px-3 text-base outline-none transition placeholder:text-neutral-400 focus:border-neutral-700"
                         value={stop.address}
                         onChange={(event) => updateStop(stop.id, event.target.value)}
-                        placeholder="住所"
+                        placeholder={t.address}
                       />
                       <p className="m-0 line-clamp-2 text-xs font-semibold text-neutral-500">
                         {stop.sourceName}
                         {stop.note ? ` / ${stop.note}` : ""}
                       </p>
                     </div>
-                    <button className={buttonClass()} type="button" onClick={() => removeStop(stop.id)} aria-label="削除" title="削除">
+                    <button className={buttonClass()} type="button" onClick={() => removeStop(stop.id)} aria-label={t.delete} title={t.delete}>
                       <Trash2 size={18} aria-hidden="true" />
                     </button>
                   </div>
                 ))
               ) : (
                 <div className="grid min-h-40 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 p-6 text-center text-sm font-bold text-neutral-500">
-                  住所が入った画像、TXT、CSV、TSV、JSONを追加してください
+                  {t.empty}
                 </div>
               )}
             </div>
@@ -410,7 +452,7 @@ export default function BatchRoutePage() {
                 onClick={useFileOrder}
               >
                 <ArrowUpDown size={19} aria-hidden="true" />
-                <span>ファイル内の順番通り</span>
+                <span>{t.fileOrder}</span>
               </button>
               <button
                 className={[
@@ -422,7 +464,7 @@ export default function BatchRoutePage() {
                 disabled={usableStops.length < 2 || isOptimizing}
               >
                 {isOptimizing ? <Loader2 className="animate-spin" size={19} aria-hidden="true" /> : <Bot size={19} aria-hidden="true" />}
-                <span>AIで移動順を最適化</span>
+                <span>{t.aiOrder}</span>
               </button>
             </div>
 
@@ -433,16 +475,19 @@ export default function BatchRoutePage() {
               disabled={!mapsUrl || isReading || isOptimizing}
             >
               <ExternalLink size={20} aria-hidden="true" />
-              <span>Google Mapsで一括ルート作成</span>
+              <span>{t.openMaps}</span>
             </button>
 
             <div className="grid gap-2 rounded-lg border border-neutral-300 bg-neutral-50 p-3">
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700">
                   <Navigation size={17} aria-hidden="true" />
-                  ルート順
+                  {t.routeOrder}
                 </span>
-                <span className="text-xs font-bold text-neutral-500">{orderedStops.length}件</span>
+                <span className="text-xs font-bold text-neutral-500">
+                  {orderedStops.length}
+                  {locale === "ja" ? t.countUnit : ` ${t.countUnit}`}
+                </span>
               </div>
               <ol className="m-0 grid list-none gap-2 p-0">
                 {orderedStops.map((stop, index) => (
@@ -453,7 +498,7 @@ export default function BatchRoutePage() {
                   </li>
                 ))}
               </ol>
-              {!orderedStops.length ? <p className="m-0 text-sm font-bold text-neutral-500">住所を追加すると順番が表示されます</p> : null}
+              {!orderedStops.length ? <p className="m-0 text-sm font-bold text-neutral-500">{t.emptyOrder}</p> : null}
             </div>
 
             {error || routeNotes.length ? (
@@ -464,7 +509,7 @@ export default function BatchRoutePage() {
             ) : null}
 
             <p className="m-0 text-xs font-semibold leading-5 text-neutral-500">
-              Google Mapsの仕様上、経由地が多い場合は一部が反映されないことがあります。その場合は住所リストを分割してください。
+              {t.mapsLimit}
             </p>
           </section>
         </div>
