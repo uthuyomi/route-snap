@@ -41,9 +41,11 @@ ERROR_MESSAGES = {
 app = FastAPI(title="Route Snap API")
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", r"https://.*\.vercel\.app")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in allowed_origins if origin.strip()],
+    allow_origin_regex=allowed_origin_regex,
     allow_credentials=False,
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
@@ -93,6 +95,15 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/health/config")
+def health_config() -> dict[str, str | bool]:
+    return {
+        "status": "ok",
+        "openai_api_key_configured": bool(os.getenv("OPENAI_API_KEY")),
+        "openai_model": os.getenv("OPENAI_MODEL", "gpt-5.2"),
+    }
+
+
 @app.post("/api/parse-address", response_model=AddressResult)
 async def parse_address(
     image: UploadFile = File(...),
@@ -115,7 +126,7 @@ async def parse_address(
     data_url = f"data:{image.content_type};base64,{encoded}"
 
     client = OpenAI(api_key=api_key)
-    model = os.getenv("OPENAI_MODEL", "gpt-5.5")
+    model = os.getenv("OPENAI_MODEL", "gpt-5.2")
 
     try:
         response = client.responses.create(
