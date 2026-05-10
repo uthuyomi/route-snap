@@ -1,22 +1,28 @@
-app = "route-snap-backend"
-primary_region = "nrt"
+# fly.toml app configuration file generated for route-snap-backend on 2026-05-10T05:21:16Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'route-snap-backend'
+primary_region = 'nrt'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  OPENAI_MODEL = "gpt-5-mini"
-  ALLOWED_ORIGINS = "https://route-snap-frontend.fly.dev"
+  ALLOWED_ORIGINS = 'https://route-snap-frontend.fly.dev'
+  OPENAI_MODEL = 'gpt-5-mini'
 
 [http_service]
-  internal_port = 8000
+  internal_port = 8080
   force_https = true
-  auto_stop_machines = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
 [[vm]]
-  memory = "512mb"
-  cpu_kind = "shared"
+  memory = '512mb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 512
