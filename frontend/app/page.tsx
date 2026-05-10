@@ -4,20 +4,32 @@ import {
   Bot,
   Camera,
   Check,
+  Download,
   ExternalLink,
+  HomeIcon,
   Languages,
   Loader2,
   MapPinned,
+  MonitorDown,
   Navigation,
   RefreshCw,
   RotateCcw,
   ScanText,
+  Share2,
+  Smartphone,
   XCircle
 } from "lucide-react";
 import Image from "next/image";
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 
 type Locale = "ja" | "en";
+type InstallTarget = "desktop" | "mobile";
+type InstallStatus = "idle" | "ready" | "installed";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
 
 type AddressResult = {
   raw_text: string;
@@ -26,12 +38,30 @@ type AddressResult = {
   notes: string[];
 };
 
+type InstallActionProps = {
+  target: InstallTarget;
+  t: Record<string, string>;
+  installStatus: InstallStatus;
+  isAppleDevice: boolean;
+  onInstall: () => void;
+  onLaunch: () => void;
+};
+
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 const messages = {
   ja: {
-    subtitle: "撮影してナビへ",
+    subtitle: "住所を撮影してナビへ",
     badge: "AI OCR",
+    installTitle: "端末に保存",
+    installed: "インストール済み",
+    desktopInstall: "PC版",
+    mobileInstall: "スマホ版",
+    launch: "起動",
+    installReady: "追加できます",
+    installManual: "共有から追加",
+    iosHint: "共有",
+    homeHint: "ホーム",
     capture: "住所を撮影",
     analyze: "整形",
     analyzing: "解析中",
@@ -53,11 +83,22 @@ const messages = {
     retakeAria: "撮り直し",
     resetAria: "リセット",
     mapsAria: "Google Mapsで開く",
-    autoAria: "整形後にGoogle Mapsを開く"
+    autoAria: "整形後にGoogle Mapsを開く",
+    installAria: "Route Snapを端末に保存",
+    launchAria: "Route Snapを起動"
   },
   en: {
     subtitle: "Snap an address, start navigation",
     badge: "AI OCR",
+    installTitle: "Save to device",
+    installed: "Installed",
+    desktopInstall: "Desktop",
+    mobileInstall: "Mobile",
+    launch: "Launch",
+    installReady: "Ready",
+    installManual: "Use share",
+    iosHint: "Share",
+    homeHint: "Home",
     capture: "Capture address",
     analyze: "Format",
     analyzing: "Reading",
@@ -79,7 +120,9 @@ const messages = {
     retakeAria: "Retake photo",
     resetAria: "Reset",
     mapsAria: "Open in Google Maps",
-    autoAria: "Open Google Maps after formatting"
+    autoAria: "Open Google Maps after formatting",
+    installAria: "Save Route Snap to this device",
+    launchAria: "Launch Route Snap"
   }
 } satisfies Record<Locale, Record<string, string>>;
 
@@ -102,8 +145,53 @@ function getInitialLocale(): Locale {
   return navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en";
 }
 
+function isStandaloneDisplay() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+function isAppleTouchDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function InstallAction({ target, t, installStatus, isAppleDevice, onInstall, onLaunch }: InstallActionProps) {
+  const isMobile = target === "mobile";
+  const Icon = isMobile ? Smartphone : MonitorDown;
+  const label = isMobile ? t.mobileInstall : t.desktopInstall;
+  const readyText =
+    installStatus === "installed" ? t.installed : installStatus === "ready" ? t.installReady : isAppleDevice && isMobile ? t.installManual : t.installReady;
+  const canPrompt = installStatus === "ready" || installStatus === "installed" || (isAppleDevice && isMobile);
+
+  return (
+    <div className="grid min-w-0 grid-cols-[2.75rem_1fr_auto] items-center gap-2 rounded-lg border border-neutral-300 bg-white p-2 shadow-sm">
+      <span className="grid h-11 w-11 place-items-center rounded-lg bg-neutral-950 text-white">
+        <Icon size={20} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-bold text-neutral-900">{label}</span>
+        <span className="block truncate text-xs font-semibold text-neutral-500">{readyText}</span>
+      </span>
+      <button
+        className={[
+          "inline-flex h-11 min-w-11 items-center justify-center rounded-lg px-3 text-sm font-bold transition active:scale-[0.98]",
+          canPrompt ? "bg-neutral-950 text-white hover:bg-neutral-800" : "bg-neutral-200 text-neutral-500"
+        ].join(" ")}
+        type="button"
+        onClick={installStatus === "installed" ? onLaunch : onInstall}
+        aria-label={installStatus === "installed" ? t.launchAria : t.installAria}
+        title={installStatus === "installed" ? t.launchAria : t.installAria}
+      >
+        {installStatus === "installed" ? <ExternalLink size={18} aria-hidden="true" /> : <Download size={18} aria-hidden="true" />}
+        <span className="ml-2 hidden sm:inline">{installStatus === "installed" ? t.launch : t.installTitle}</span>
+      </button>
+    </div>
+  );
+}
+
 export default function Home() {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const installPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
   const [locale, setLocale] = useState<Locale>(() => getInitialLocale());
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -112,10 +200,55 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [autoOpenMaps, setAutoOpenMaps] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [installStatus, setInstallStatus] = useState<InstallStatus>(() => (isStandaloneDisplay() ? "installed" : "idle"));
+  const [isAppleDevice] = useState(() => isAppleTouchDevice());
 
   const t = messages[locale];
   const activeAddress = (manualAddress || result?.normalized_address || "").trim();
   const mapsUrl = useMemo(() => (activeAddress ? buildMapsUrl(activeAddress) : ""), [activeAddress]);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+
+    function onBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      installPromptRef.current = event as BeforeInstallPromptEvent;
+      setInstallStatus("ready");
+    }
+
+    function onAppInstalled() {
+      installPromptRef.current = null;
+      setInstallStatus("installed");
+    }
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, []);
+
+  async function installApp() {
+    if (installPromptRef.current) {
+      const prompt = installPromptRef.current;
+      installPromptRef.current = null;
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      setInstallStatus(choice.outcome === "accepted" ? "installed" : "idle");
+      return;
+    }
+
+    if (!isAppleDevice) {
+      setInstallStatus(isStandaloneDisplay() ? "installed" : "idle");
+    }
+  }
+
+  function launchApp() {
+    window.location.assign("/");
+  }
 
   function resetCapture() {
     setImageFile(null);
@@ -212,6 +345,23 @@ export default function Home() {
             </button>
           </div>
         </header>
+
+        <div className="grid gap-2 sm:grid-cols-2" aria-label={t.installAria}>
+          <InstallAction target="desktop" t={t} installStatus={installStatus} isAppleDevice={isAppleDevice} onInstall={installApp} onLaunch={launchApp} />
+          <InstallAction target="mobile" t={t} installStatus={installStatus} isAppleDevice={isAppleDevice} onInstall={installApp} onLaunch={launchApp} />
+          {isAppleDevice && installStatus !== "installed" ? (
+            <div className="grid grid-cols-2 gap-2 sm:col-span-2">
+              <div className="grid h-12 grid-cols-[2.5rem_1fr] items-center rounded-lg border border-neutral-300 bg-neutral-50 px-2 text-xs font-bold text-neutral-600">
+                <Share2 size={18} aria-hidden="true" />
+                <span className="truncate">{t.iosHint}</span>
+              </div>
+              <div className="grid h-12 grid-cols-[2.5rem_1fr] items-center rounded-lg border border-neutral-300 bg-neutral-50 px-2 text-xs font-bold text-neutral-600">
+                <HomeIcon size={18} aria-hidden="true" />
+                <span className="truncate">{t.homeHint}</span>
+              </div>
+            </div>
+          ) : null}
+        </div>
 
         <div className="relative aspect-[3/4] overflow-hidden rounded-lg border border-neutral-300 bg-white shadow-sm sm:aspect-[4/5] lg:aspect-[4/3]">
           {previewUrl ? (

@@ -2,8 +2,23 @@
   "name": "Route Snap",
   "short_name": "Route Snap",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0b1411",
-  "theme_color": "#0b1411",
-  "icons": []
+  "background_color": "#f5f5f5",
+  "theme_color": "#0a0a0a",
+  "description": "Capture an address, normalize it with AI, and open it in Google Maps.",
+  "icons": [
+    {
+      "src": "/image/icon/route-snap.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/image/icon/route-snap.ico",
+      "sizes": "256x256",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
 }

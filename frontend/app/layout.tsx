@@ -3,7 +3,20 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Route Snap",
-  description: "Capture an address, normalize it with AI, and open it in Google Maps."
+  description: "Capture an address, normalize it with AI, and open it in Google Maps.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Route Snap",
+    statusBarStyle: "default"
+  },
+  icons: {
+    icon: [
+      { url: "/image/icon/route-snap.ico", sizes: "256x256" },
+      { url: "/image/icon/route-snap.png", sizes: "1254x1254", type: "image/png" }
+    ],
+    apple: "/image/icon/route-snap.png"
+  }
 };
 
 export const viewport: Viewport = {
