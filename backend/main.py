@@ -21,6 +21,21 @@ class AddressResult(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class RouteStop(BaseModel):
+    index: int
+    address: str
+
+
+class RouteOptimizeRequest(BaseModel):
+    stops: list[RouteStop]
+    locale: Locale = "ja"
+
+
+class RouteOptimizeResult(BaseModel):
+    ordered_indices: list[int]
+    notes: list[str] = Field(default_factory=list)
+
+
 ERROR_MESSAGES = {
     "ja": {
         "image_required": "画像ファイルを送信してください",
@@ -99,6 +114,26 @@ For Japanese addresses, preserve Japanese address order and use standard Japanes
 """.strip()
 
 
+def build_route_prompt(stops: list[RouteStop], locale: Locale) -> str:
+    response_language = "Japanese" if locale == "ja" else "English"
+    stops_text = "\n".join(f'{stop.index}: {stop.address}' for stop in stops)
+    return f"""
+Optimize the visit order for these delivery or navigation stops.
+Use geographic knowledge, address order, and practical driving sequence.
+Keep every provided index exactly once. Return JSON only. Do not wrap it in Markdown.
+Write notes in {response_language}.
+
+Stops:
+{stops_text}
+
+Expected schema:
+{{
+  "ordered_indices": [0, 1, 2],
+  "notes": ["short reason for the ordering"]
+}}
+""".strip()
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -163,3 +198,48 @@ async def parse_address(
     except Exception as exc:
         detail = f"{error_message(active_locale, 'json_failed')}: {exc}"
         raise HTTPException(status_code=502, detail=detail) from exc
+
+
+@app.post("/api/optimize-route", response_model=RouteOptimizeResult)
+async def optimize_route(
+    request: RouteOptimizeRequest,
+    x_route_snap_token: str | None = Header(default=None),
+) -> RouteOptimizeResult:
+    verify_api_token(x_route_snap_token)
+
+    stops = [stop for stop in request.stops if stop.address.strip()]
+    if len(stops) < 2:
+        return RouteOptimizeResult(ordered_indices=[stop.index for stop in stops])
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail=error_message(request.locale, "api_key_missing"))
+
+    client = OpenAI(api_key=api_key)
+    model = os.getenv("OPENAI_MODEL", "gpt-5.2")
+
+    try:
+        response = client.responses.create(
+            model=model,
+            input=[
+                {
+                    "role": "user",
+                    "content": [{"type": "input_text", "text": build_route_prompt(stops, request.locale)}],
+                }
+            ],
+        )
+    except Exception as exc:
+        detail = f"{error_message(request.locale, 'ai_failed')}: {exc}"
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+    try:
+        payload = extract_json(response.output_text)
+        result = RouteOptimizeResult.model_validate(payload)
+    except Exception as exc:
+        detail = f"{error_message(request.locale, 'json_failed')}: {exc}"
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+    known_indices = {stop.index for stop in stops}
+    ordered = [index for index in result.ordered_indices if index in known_indices]
+    missing = [stop.index for stop in stops if stop.index not in ordered]
+    return RouteOptimizeResult(ordered_indices=ordered + missing, notes=result.notes)
