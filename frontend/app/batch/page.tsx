@@ -410,7 +410,7 @@ export default function BatchRoutePage() {
                 onClick={useFileOrder}
               >
                 <ArrowUpDown size={19} aria-hidden="true" />
-                <span>ファイル順</span>
+                <span>ファイル内の順番通り</span>
               </button>
               <button
                 className={[
@@ -422,7 +422,7 @@ export default function BatchRoutePage() {
                 disabled={usableStops.length < 2 || isOptimizing}
               >
                 {isOptimizing ? <Loader2 className="animate-spin" size={19} aria-hidden="true" /> : <Bot size={19} aria-hidden="true" />}
-                <span>AI最適化</span>
+                <span>AIで移動順を最適化</span>
               </button>
             </div>
 
