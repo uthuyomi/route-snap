@@ -394,9 +394,9 @@ export default function BatchRoutePage() {
           <section className="grid gap-3 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="m-0 text-xs font-black uppercase tracking-wide text-neutral-500">{t.uploadPanel}</p>
+                <p className="sr-only">{t.uploadPanel}</p>
                 <h1 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.addFiles}</h1>
-                <p className="m-0 mt-2 max-w-2xl text-sm font-medium leading-6 text-neutral-600">{t.uploadHelp}</p>
+                <p className="sr-only">{t.uploadHelp}</p>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2" title={t.imported}>
@@ -506,9 +506,9 @@ export default function BatchRoutePage() {
 
           <section className="grid content-start gap-3 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm lg:sticky lg:top-4">
             <div>
-              <p className="m-0 text-xs font-black uppercase tracking-wide text-neutral-500">{t.routePanel}</p>
+              <p className="sr-only">{t.routePanel}</p>
               <h2 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.routeOrder}</h2>
-              <p className="m-0 mt-2 text-sm font-medium leading-6 text-neutral-600">{t.routeHelp}</p>
+              <p className="sr-only">{t.routeHelp}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -548,7 +548,7 @@ export default function BatchRoutePage() {
               disabled={!mapsUrl || isReading || isOptimizing}
             >
               <ExternalLink size={20} aria-hidden="true" />
-              <span>{t.openMaps}</span>
+              <span className="sr-only">{t.openMaps}</span>
             </button>
 
             <div className="grid gap-2 rounded-lg border border-neutral-300 bg-neutral-50 p-3">

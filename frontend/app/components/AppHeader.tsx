@@ -49,9 +49,9 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-neutral-950 text-white shadow-sm">
           <MapPinned size={22} aria-hidden="true" />
         </span>
-        <span className="min-w-0">
+        <span className="min-w-0 hidden sm:block">
           <span className="block text-lg font-bold leading-6 text-neutral-950">Route Snap</span>
-          <span className="block truncate text-xs font-medium text-neutral-500">{t.subtitle}</span>
+          <span className="sr-only">{t.subtitle}</span>
         </span>
       </Link>
 

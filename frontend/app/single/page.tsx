@@ -175,17 +175,17 @@ function InstallAction({ target, t, installStatus, isAppleDevice, onInstall, onL
   const canPrompt = installStatus === "ready" || installStatus === "installed" || (isAppleDevice && isMobile);
 
   return (
-    <div className="grid min-w-0 grid-cols-[2.75rem_1fr_auto] items-center gap-2 rounded-lg border border-neutral-300 bg-white p-2 shadow-sm">
+    <div className="grid min-w-0 grid-cols-[2.75rem_auto] items-center gap-2 rounded-lg border border-neutral-300 bg-white p-2 shadow-sm" title={`${label}: ${readyText}`}>
       <span className="grid h-11 w-11 place-items-center rounded-lg bg-neutral-950 text-white">
         <Icon size={20} aria-hidden="true" />
       </span>
-      <span className="min-w-0">
+      <span className="sr-only">
         <span className="block truncate text-sm font-bold text-neutral-900">{label}</span>
         <span className="block truncate text-xs font-semibold text-neutral-500">{readyText}</span>
       </span>
       <button
         className={[
-          "inline-flex h-11 min-w-11 items-center justify-center rounded-lg px-3 text-sm font-bold transition active:scale-[0.98]",
+          "inline-flex h-11 w-11 items-center justify-center rounded-lg text-sm font-bold transition active:scale-[0.98]",
           canPrompt ? "bg-neutral-950 text-white hover:bg-neutral-800" : "bg-neutral-200 text-neutral-500"
         ].join(" ")}
         type="button"
@@ -335,11 +335,14 @@ export default function Home() {
           <section className="grid gap-4 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm" aria-label={t.photoAria}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="m-0 text-xs font-black uppercase tracking-wide text-neutral-500">{t.capturePanel}</p>
+                <p className="sr-only">{t.capturePanel}</p>
                 <h1 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.capture}</h1>
-                <p className="m-0 mt-2 max-w-2xl text-sm font-medium leading-6 text-neutral-600">{t.captureHelp}</p>
+                <p className="sr-only">{t.captureHelp}</p>
               </div>
-              <span className="rounded-full border border-neutral-300 bg-neutral-50 px-3 py-1 text-xs font-black text-neutral-600">{imageFile ? t.readyPhoto : t.noPhoto}</span>
+              <span className="grid h-9 w-9 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-700" title={imageFile ? t.readyPhoto : t.noPhoto}>
+                {imageFile ? <Check size={18} aria-hidden="true" /> : <XCircle size={18} aria-hidden="true" />}
+                <span className="sr-only">{imageFile ? t.readyPhoto : t.noPhoto}</span>
+              </span>
             </div>
 
             <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-neutral-300 bg-neutral-50 shadow-sm">
@@ -357,7 +360,7 @@ export default function Home() {
                     <span className="grid h-24 w-24 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-950 shadow-sm">
                       <Camera size={42} aria-hidden="true" />
                     </span>
-                    <span className="text-sm font-black text-neutral-700">{t.capture}</span>
+                    <span className="sr-only">{t.capture}</span>
                   </span>
                 </button>
               )}
@@ -381,7 +384,7 @@ export default function Home() {
                 title={t.analyzeAria}
               >
                 {isLoading ? <Loader2 className="animate-spin" size={22} aria-hidden="true" /> : <ScanText size={22} aria-hidden="true" />}
-                <span>{isLoading ? t.analyzing : t.analyze}</span>
+                <span className="sr-only">{isLoading ? t.analyzing : t.analyze}</span>
               </button>
               <button className={iconButtonClass()} type="button" onClick={() => inputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
                 <RefreshCw size={19} aria-hidden="true" />
@@ -394,7 +397,7 @@ export default function Home() {
             </div>
 
             <div className="grid gap-2 rounded-lg border border-neutral-300 bg-neutral-50 p-3">
-              <p className="m-0 text-xs font-bold leading-5 text-neutral-500">{t.installHelp}</p>
+              <p className="sr-only">{t.installHelp}</p>
               <div className="grid gap-2 sm:grid-cols-2" aria-label={t.installAria}>
                 <InstallAction target="desktop" t={t} installStatus={installStatus} isAppleDevice={isAppleDevice} onInstall={installApp} onLaunch={launchApp} />
                 <InstallAction target="mobile" t={t} installStatus={installStatus} isAppleDevice={isAppleDevice} onInstall={installApp} onLaunch={launchApp} />
@@ -403,11 +406,11 @@ export default function Home() {
                 <div className="grid grid-cols-2 gap-2">
                   <div className="grid h-12 grid-cols-[2.5rem_1fr] items-center rounded-lg border border-neutral-300 bg-white px-2 text-xs font-bold text-neutral-600">
                     <Share2 size={18} aria-hidden="true" />
-                    <span className="truncate">{t.iosHint}</span>
+                    <span className="sr-only">{t.iosHint}</span>
                   </div>
                   <div className="grid h-12 grid-cols-[2.5rem_1fr] items-center rounded-lg border border-neutral-300 bg-white px-2 text-xs font-bold text-neutral-600">
                     <HomeIcon size={18} aria-hidden="true" />
-                    <span className="truncate">{t.homeHint}</span>
+                    <span className="sr-only">{t.homeHint}</span>
                   </div>
                 </div>
               ) : null}
@@ -416,9 +419,9 @@ export default function Home() {
 
           <section className="grid gap-4 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm lg:sticky lg:top-4" aria-label={t.destination}>
             <div>
-              <p className="m-0 text-xs font-black uppercase tracking-wide text-neutral-500">{t.confirmPanel}</p>
+              <p className="sr-only">{t.confirmPanel}</p>
               <h2 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.destination}</h2>
-              <p className="m-0 mt-2 text-sm font-medium leading-6 text-neutral-600">{t.mapsHelp}</p>
+              <p className="sr-only">{t.mapsHelp}</p>
             </div>
 
             <label className="grid gap-2">
@@ -445,7 +448,7 @@ export default function Home() {
               title={t.mapsAria}
             >
               <ExternalLink size={20} aria-hidden="true" />
-              <span>{t.openMaps}</span>
+              <span className="sr-only">{t.openMaps}</span>
             </button>
 
             <div className="grid grid-cols-3 gap-2">
