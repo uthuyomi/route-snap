@@ -25,6 +25,7 @@ type BatchStop = {
   address: string;
   status: StopStatus;
   note?: string;
+  routeNote: string;
 };
 
 type AddressResult = {
@@ -51,6 +52,9 @@ const messages = {
     addFiles: "画像・ファイルを追加",
     imageOcr: "画像OCR",
     aiNotes: "AIへの備考",
+    globalNotes: "全体の備考",
+    stopNote: "この住所の備考",
+    stopNotePlaceholder: "例: 10時指定、荷物多め、最後に回す",
     notesPlaceholder: "例: 10時までに新宿、午後は渋谷方面を優先。高速道路は避けたい。",
     address: "住所",
     delete: "削除",
@@ -75,6 +79,9 @@ const messages = {
     addFiles: "Add images or files",
     imageOcr: "Image OCR",
     aiNotes: "Notes for AI",
+    globalNotes: "Global notes",
+    stopNote: "Notes for this stop",
+    stopNotePlaceholder: "Example: 10:00 appointment, large delivery, visit last",
     notesPlaceholder: "Example: Reach Shinjuku by 10:00, prioritize Shibuya in the afternoon, avoid highways.",
     address: "Address",
     delete: "Delete",
@@ -116,19 +123,22 @@ function extractTextStops(fileName: string, text: string): BatchStop[] {
       const values = Array.isArray(parsed) ? parsed : [parsed];
       return values
         .map((value) => {
-          if (typeof value === "string") return value;
+          if (typeof value === "string") return { address: value, routeNote: "" };
           if (value && typeof value === "object") {
             const record = value as Record<string, unknown>;
-            return String(record.address ?? record.destination ?? record.name ?? Object.values(record).filter(Boolean).join(" "));
+            const address = String(record.address ?? record.destination ?? record.name ?? Object.values(record).filter(Boolean).join(" "));
+            const routeNote = String(record.note ?? record.notes ?? record.memo ?? record.remark ?? "");
+            return { address, routeNote };
           }
-          return "";
+          return { address: "", routeNote: "" };
         })
-        .map((address) => address.trim())
-        .filter(Boolean)
-        .map((address, index) => ({
+        .map((stop) => ({ address: stop.address.trim(), routeNote: stop.routeNote.trim() }))
+        .filter((stop) => stop.address)
+        .map((stop, index) => ({
           id: createId(),
           sourceName: `${fileName} #${index + 1}`,
-          address,
+          address: stop.address,
+          routeNote: stop.routeNote,
           status: "ready"
         }));
     } catch {
@@ -145,6 +155,7 @@ function extractTextStops(fileName: string, text: string): BatchStop[] {
       id: createId(),
       sourceName: `${fileName} #${index + 1}`,
       address,
+      routeNote: "",
       status: "ready"
     }));
 }
@@ -211,6 +222,7 @@ export default function BatchRoutePage() {
         id,
         sourceName: file.name,
         address: "",
+        routeNote: "",
         status: "reading",
         note: t.readingImage
       }
@@ -266,6 +278,7 @@ export default function BatchRoutePage() {
           id: createId(),
           sourceName: file.name,
           address: "",
+          routeNote: "",
           status: "error",
           note: t.noAddressInFile
         }
@@ -305,6 +318,10 @@ export default function BatchRoutePage() {
     setStops((current) => current.map((stop) => (stop.id === id ? { ...stop, address, status: address.trim() ? "ready" : "error" } : stop)));
   }
 
+  function updateStopRouteNote(id: string, routeNote: string) {
+    setStops((current) => current.map((stop) => (stop.id === id ? { ...stop, routeNote } : stop)));
+  }
+
   function removeStop(id: string) {
     setStops((current) => current.filter((stop) => stop.id !== id));
     setRouteOrderIds((current) => current.filter((stopId) => stopId !== id));
@@ -338,7 +355,8 @@ export default function BatchRoutePage() {
           notes,
           stops: usableStops.map((stop, index) => ({
             index,
-            address: stop.address
+            address: stop.address,
+            note: stop.routeNote
           }))
         })
       });
@@ -400,7 +418,7 @@ export default function BatchRoutePage() {
             <label className="grid gap-2">
               <span className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700">
                 <Bot size={17} aria-hidden="true" />
-                {t.aiNotes}
+                {t.globalNotes}
               </span>
               <textarea
                 className="min-h-24 w-full resize-y rounded-lg border border-neutral-300 bg-white p-3 text-base leading-6 outline-none transition placeholder:text-neutral-400 focus:border-neutral-700"
@@ -423,6 +441,17 @@ export default function BatchRoutePage() {
                         onChange={(event) => updateStop(stop.id, event.target.value)}
                         placeholder={t.address}
                       />
+                      <label className="grid gap-1">
+                        <span className="text-xs font-bold text-neutral-600">{t.stopNote}</span>
+                        <textarea
+                          className="min-h-16 resize-y rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm leading-5 outline-none transition placeholder:text-neutral-400 focus:border-neutral-700"
+                          value={stop.routeNote}
+                          onChange={(event) => updateStopRouteNote(stop.id, event.target.value)}
+                          placeholder={t.stopNotePlaceholder}
+                          rows={2}
+                          disabled={stop.status === "reading"}
+                        />
+                      </label>
                       <p className="m-0 line-clamp-2 text-xs font-semibold text-neutral-500">
                         {stop.sourceName}
                         {stop.note ? ` / ${stop.note}` : ""}

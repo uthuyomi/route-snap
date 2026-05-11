@@ -24,6 +24,7 @@ class AddressResult(BaseModel):
 class RouteStop(BaseModel):
     index: int
     address: str
+    note: str = ""
 
 
 class RouteOptimizeRequest(BaseModel):
@@ -128,7 +129,7 @@ def build_route_prompt(stops: list[RouteStop], notes: str, locale: Locale) -> st
 You are planning a practical driving route for delivery or field visits.
 Return JSON only. Do not wrap it in Markdown.
 Use every stop index exactly once. Do not invent, remove, or duplicate stops.
-Respect the user's notes as much as possible, especially time windows, priority, and constraints.
+Respect the global notes and each stop note as much as possible, especially time windows, priority, and constraints.
 Write notes in {response_language}.
 
 Stops:
