@@ -1,18 +1,6 @@
 "use client";
 
-import {
-  ArrowUpDown,
-  Bot,
-  Check,
-  ExternalLink,
-  FileText,
-  ImagePlus,
-  Loader2,
-  Navigation,
-  Trash2,
-  Upload,
-  XCircle
-} from "lucide-react";
+import { ArrowUpDown, Bot, Check, ExternalLink, FileText, ImagePlus, Loader2, Navigation, Trash2, Upload, XCircle } from "lucide-react";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
 
@@ -411,17 +399,21 @@ export default function BatchRoutePage() {
                 <p className="m-0 mt-2 max-w-2xl text-sm font-medium leading-6 text-neutral-600">{t.uploadHelp}</p>
               </div>
               <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2">
+                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2" title={t.imported}>
                   <span className="block text-lg font-black tabular-nums text-neutral-950">{stops.length}</span>
-                  <span className="block text-[11px] font-black text-neutral-500">{t.imported}</span>
+                  <Upload className="mx-auto mt-1 text-neutral-500" size={14} aria-hidden="true" />
+                  <span className="sr-only">{t.imported}</span>
                 </div>
-                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2">
+                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2" title={t.ready}>
                   <span className="block text-lg font-black tabular-nums text-neutral-950">{usableStops.length}</span>
-                  <span className="block text-[11px] font-black text-neutral-500">{t.ready}</span>
+                  <Check className="mx-auto mt-1 text-neutral-500" size={14} aria-hidden="true" />
+                  <span className="sr-only">{t.ready}</span>
                 </div>
-                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2">
-                  <span className="block text-lg font-black text-neutral-950">{routeMode === "ai" ? t.aiMode : t.fileMode}</span>
-                  <span className="block text-[11px] font-black text-neutral-500">{t.plannedBy}</span>
+                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2" title={`${t.plannedBy}: ${routeMode === "ai" ? t.aiMode : t.fileMode}`}>
+                  <span className="grid min-h-7 place-items-center text-neutral-950">
+                    {routeMode === "ai" ? <Bot size={22} aria-hidden="true" /> : <ArrowUpDown size={22} aria-hidden="true" />}
+                  </span>
+                  <span className="sr-only">{routeMode === "ai" ? t.aiMode : t.fileMode}</span>
                 </div>
               </div>
             </div>
@@ -431,9 +423,11 @@ export default function BatchRoutePage() {
                 className="inline-flex min-h-24 items-center justify-center gap-3 rounded-lg border border-dashed border-neutral-400 bg-neutral-50 px-4 text-sm font-black text-neutral-800 transition hover:border-neutral-600 hover:bg-white active:scale-[0.99]"
                 type="button"
                 onClick={() => inputRef.current?.click()}
+                aria-label={t.addFiles}
+                title={t.addFiles}
               >
                 <Upload size={24} aria-hidden="true" />
-                <span>{t.addFiles}</span>
+                <span className="sr-only">{t.addFiles}</span>
               </button>
               <input
                 ref={inputRef}
@@ -444,13 +438,13 @@ export default function BatchRoutePage() {
                 onChange={onPickFiles}
               />
               <div className="grid grid-cols-2 gap-2 sm:w-52">
-                <div className="grid h-14 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600">
+                <div className="grid h-14 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600" title="TXT CSV JSON">
                   <FileText size={18} aria-hidden="true" />
-                  <span>TXT CSV JSON</span>
+                  <span className="sr-only">TXT CSV JSON</span>
                 </div>
-                <div className="grid h-14 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600">
+                <div className="grid h-14 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600" title={t.imageOcr}>
                   <ImagePlus size={18} aria-hidden="true" />
-                  <span>{t.imageOcr}</span>
+                  <span className="sr-only">{t.imageOcr}</span>
                 </div>
               </div>
             </div>
@@ -458,7 +452,7 @@ export default function BatchRoutePage() {
             <label className="grid gap-2">
               <span className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700">
                 <Bot size={17} aria-hidden="true" />
-                {t.globalNotes}
+                <span className="sr-only">{t.globalNotes}</span>
               </span>
               <textarea
                 className="min-h-24 w-full resize-y rounded-lg border border-neutral-300 bg-white p-3 text-base leading-6 outline-none transition placeholder:text-neutral-400 focus:border-neutral-700"
@@ -482,7 +476,7 @@ export default function BatchRoutePage() {
                         placeholder={t.address}
                       />
                       <label className="grid gap-1">
-                        <span className="text-xs font-bold text-neutral-600">{t.stopNote}</span>
+                        <span className="sr-only">{t.stopNote}</span>
                         <textarea
                           className="min-h-16 resize-y rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm leading-5 outline-none transition placeholder:text-neutral-400 focus:border-neutral-700"
                           value={stop.routeNote}
@@ -525,9 +519,11 @@ export default function BatchRoutePage() {
                 ].join(" ")}
                 type="button"
                 onClick={useFileOrder}
+                aria-label={t.fileOrder}
+                title={t.fileOrder}
               >
                 <ArrowUpDown size={19} aria-hidden="true" />
-                <span>{t.fileOrder}</span>
+                <span className="sr-only">{t.fileOrder}</span>
               </button>
               <button
                 className={[
@@ -537,9 +533,11 @@ export default function BatchRoutePage() {
                 type="button"
                 onClick={optimizeRoute}
                 disabled={usableStops.length < 2 || isOptimizing}
+                aria-label={t.aiOrder}
+                title={t.aiOrder}
               >
                 {isOptimizing ? <Loader2 className="animate-spin" size={19} aria-hidden="true" /> : <Bot size={19} aria-hidden="true" />}
-                <span>{t.aiOrder}</span>
+                <span className="sr-only">{t.aiOrder}</span>
               </button>
             </div>
 
@@ -557,7 +555,7 @@ export default function BatchRoutePage() {
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700">
                   <Navigation size={17} aria-hidden="true" />
-                  {t.routeOrder}
+                  <span className="sr-only">{t.routeOrder}</span>
                 </span>
                 <span className="text-xs font-bold text-neutral-500">
                   {orderedStops.length}

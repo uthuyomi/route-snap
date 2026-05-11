@@ -194,7 +194,7 @@ function InstallAction({ target, t, installStatus, isAppleDevice, onInstall, onL
         title={installStatus === "installed" ? t.launchAria : t.installAria}
       >
         {installStatus === "installed" ? <ExternalLink size={18} aria-hidden="true" /> : <Download size={18} aria-hidden="true" />}
-        <span className="ml-2 hidden sm:inline">{installStatus === "installed" ? t.launch : t.installTitle}</span>
+        <span className="sr-only">{installStatus === "installed" ? t.launch : t.installTitle}</span>
       </button>
     </div>
   );
@@ -385,10 +385,11 @@ export default function Home() {
               </button>
               <button className={iconButtonClass()} type="button" onClick={() => inputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
                 <RefreshCw size={19} aria-hidden="true" />
-                <span className="hidden sm:inline">{t.retake}</span>
+                <span className="sr-only">{t.retake}</span>
               </button>
               <button className={iconButtonClass()} type="button" onClick={resetCapture} aria-label={t.resetAria} title={t.resetAria}>
                 <RotateCcw size={20} aria-hidden="true" />
+                <span className="sr-only">{t.reset}</span>
               </button>
             </div>
 
@@ -458,12 +459,12 @@ export default function Home() {
               >
                 <input className="sr-only" type="checkbox" checked={autoOpenMaps} onChange={(event) => setAutoOpenMaps(event.target.checked)} />
                 <Bot size={20} aria-hidden="true" />
-                <span>{t.autoOpen}</span>
+                <span className="sr-only">{t.autoOpen}</span>
               </label>
 
               <div className="grid h-16 place-items-center gap-1 rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600" title={t.confidence}>
                 <span className="text-sm tabular-nums text-neutral-950">{result ? `${Math.round(result.confidence * 100)}%` : "--"}</span>
-                <span>{t.confidence}</span>
+                <span className="sr-only">{t.confidence}</span>
               </div>
 
               <div
@@ -474,7 +475,7 @@ export default function Home() {
                 title={error ?? t.status}
               >
                 {error ? <XCircle size={20} aria-hidden="true" /> : <Check size={20} aria-hidden="true" />}
-                <span>{error ? t.needsCheck : t.status}</span>
+                <span className="sr-only">{error ? t.needsCheck : t.status}</span>
               </div>
             </div>
 

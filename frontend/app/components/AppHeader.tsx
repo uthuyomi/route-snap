@@ -1,6 +1,6 @@
 "use client";
 
-import { Languages, MapPinned, Route, ScanText } from "lucide-react";
+import { Home, Languages, MapPinned, Route, ScanText } from "lucide-react";
 import Link from "next/link";
 
 export type AppLocale = "ja" | "en";
@@ -33,7 +33,7 @@ const labels = {
 
 function navClass(active: boolean) {
   return [
-    "inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98]",
+    "inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98]",
     active
       ? "border-neutral-950 bg-neutral-950 text-white"
       : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
@@ -56,17 +56,18 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
       </Link>
 
       <nav className="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 sm:justify-end" aria-label="Route Snap">
-        <Link className={navClass(currentPage === "home")} href="/">
-          {t.home}
+        <Link className={navClass(currentPage === "home")} href="/" aria-label={t.home} title={t.home}>
+          <Home size={17} aria-hidden="true" />
+          <span className="sr-only">{t.home}</span>
         </Link>
-        <Link className={navClass(currentPage === "single")} href="/single">
+        <Link className={navClass(currentPage === "single")} href="/single" aria-label={t.single} title={t.single}>
           <ScanText size={17} aria-hidden="true" />
-          <span>{t.single}</span>
+          <span className="sr-only">{t.single}</span>
         </Link>
-        <Link className={navClass(currentPage === "batch")} href="/batch">
+        <Link className={navClass(currentPage === "batch")} href="/batch" aria-label={`${t.batch} ${t.paid}`} title={`${t.batch} ${t.paid}`}>
           <Route size={17} aria-hidden="true" />
-          <span>{t.batch}</span>
-          <span className="hidden rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-black sm:inline">{t.paid}</span>
+          <span className="sr-only">{t.batch}</span>
+          <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
         </Link>
         <button className={navClass(false)} type="button" onClick={onToggleLocale} aria-label={t.language} title={t.language}>
           <Languages size={18} aria-hidden="true" />
