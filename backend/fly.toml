@@ -12,7 +12,7 @@ primary_region = 'nrt'
 [env]
   ALLOWED_ORIGINS = 'https://route-snap-frontend.fly.dev,https://route-snap.vercel.app'
   ALLOWED_ORIGIN_REGEX = 'https://.*\.vercel\.app'
-  OPENAI_MODEL = 'gpt-5.2'
+  OPENAI_MODEL = 'gpt-5.5'
 
 [http_service]
   internal_port = 8080
