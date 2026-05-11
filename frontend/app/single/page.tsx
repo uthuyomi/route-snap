@@ -123,7 +123,7 @@ function buildMapsUrl(address: string) {
 
 function iconButtonClass(active = true) {
   return [
-    "inline-flex h-14 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition active:scale-[0.98]",
+    "inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition active:scale-[0.98] sm:h-12 lg:h-14",
     active
       ? "border-neutral-300 bg-white text-neutral-900 shadow-sm hover:border-neutral-400 hover:bg-neutral-50"
       : "border-neutral-200 bg-neutral-100 text-neutral-400"
@@ -216,25 +216,25 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-svh bg-neutral-100 px-4 py-4 text-neutral-950 sm:px-6 lg:py-8">
-      <div className="mx-auto grid w-full max-w-6xl gap-4">
+    <main className="h-svh overflow-hidden bg-neutral-100 px-2 py-2 text-neutral-950 sm:px-3 lg:h-auto lg:min-h-svh lg:overflow-visible lg:px-6 lg:py-8">
+      <div className="mx-auto grid h-full w-full max-w-6xl grid-rows-[auto_1fr] gap-2 lg:h-auto lg:gap-4">
         <AppHeader locale={locale} currentPage="single" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] lg:items-start">
-          <section className="grid gap-4 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm" aria-label={t.photoAria}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="grid min-h-0 gap-2 md:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] lg:gap-4 lg:items-start">
+          <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 rounded-lg border border-neutral-300 bg-white p-2 shadow-sm sm:p-3 lg:gap-4 lg:p-4" aria-label={t.photoAria}>
+            <div className="flex items-start justify-between gap-2">
               <div>
                 <p className="sr-only">{t.capturePanel}</p>
-                <h1 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.capture}</h1>
+                <h1 className="m-0 text-base font-black leading-tight text-neutral-950 sm:text-lg lg:text-2xl">{t.capture}</h1>
                 <p className="sr-only">{t.captureHelp}</p>
               </div>
-              <span className="grid h-9 w-9 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-700" title={imageFile ? t.readyPhoto : t.noPhoto}>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-700 sm:h-9 sm:w-9" title={imageFile ? t.readyPhoto : t.noPhoto}>
                 {imageFile ? <Check size={18} aria-hidden="true" /> : <XCircle size={18} aria-hidden="true" />}
                 <span className="sr-only">{imageFile ? t.readyPhoto : t.noPhoto}</span>
               </span>
             </div>
 
-            <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-neutral-300 bg-neutral-50 shadow-sm">
+            <div className="relative min-h-0 overflow-hidden rounded-lg border border-neutral-300 bg-neutral-50 shadow-sm lg:aspect-[4/3]">
               {previewUrl ? (
                 <Image className="object-contain" src={previewUrl} alt={t.imageAlt} fill sizes="(min-width: 1024px) 620px, 100vw" unoptimized />
               ) : (
@@ -246,8 +246,8 @@ export default function Home() {
                   title={t.photoAria}
                 >
                   <span className="grid place-items-center gap-3">
-                    <span className="grid h-24 w-24 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-950 shadow-sm">
-                      <Camera size={42} aria-hidden="true" />
+                    <span className="grid h-16 w-16 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-950 shadow-sm sm:h-20 sm:w-20 lg:h-24 lg:w-24">
+                      <Camera className="h-8 w-8 sm:h-10 sm:w-10" aria-hidden="true" />
                     </span>
                     <span className="sr-only">{t.capture}</span>
                   </span>
@@ -265,7 +265,7 @@ export default function Home() {
 
             <div className="grid grid-cols-[1fr_auto_auto] gap-2">
               <button
-                className="inline-flex h-14 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.98] disabled:bg-neutral-300 disabled:text-neutral-500 disabled:shadow-none"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.98] disabled:bg-neutral-300 disabled:text-neutral-500 disabled:shadow-none sm:h-12 lg:h-14"
                 type="button"
                 onClick={analyzeImage}
                 disabled={!imageFile || isLoading}
@@ -287,20 +287,20 @@ export default function Home() {
 
           </section>
 
-          <section className="grid gap-4 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm lg:sticky lg:top-4" aria-label={t.destination}>
+          <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] gap-2 rounded-lg border border-neutral-300 bg-white p-2 shadow-sm sm:p-3 md:sticky md:top-2 lg:top-4 lg:gap-4 lg:p-4" aria-label={t.destination}>
             <div>
               <p className="sr-only">{t.confirmPanel}</p>
-              <h2 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.destination}</h2>
+              <h2 className="m-0 text-base font-black leading-tight text-neutral-950 sm:text-lg lg:text-2xl">{t.destination}</h2>
               <p className="sr-only">{t.mapsHelp}</p>
             </div>
 
-            <label className="grid gap-2">
-              <span className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700">
+            <label className="grid min-h-0 grid-rows-[auto_1fr] gap-1">
+              <span className="inline-flex items-center gap-2 text-xs font-bold text-neutral-700 sm:text-sm">
                 <Navigation size={17} aria-hidden="true" />
                 {t.destination}
               </span>
               <textarea
-                className="min-h-36 w-full resize-y rounded-lg border border-neutral-300 bg-white p-3 text-base leading-6 text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-700"
+                className="min-h-0 w-full resize-none rounded-lg border border-neutral-300 bg-white p-2 text-sm leading-5 text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-700 sm:p-3 sm:text-base sm:leading-6"
                 value={manualAddress}
                 onChange={(event) => setManualAddress(event.target.value)}
                 placeholder={t.destinationPlaceholder}
@@ -310,7 +310,7 @@ export default function Home() {
             </label>
 
             <button
-              className="inline-flex h-14 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.98] disabled:bg-neutral-300 disabled:text-neutral-500 disabled:shadow-none"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.98] disabled:bg-neutral-300 disabled:text-neutral-500 disabled:shadow-none sm:h-12 lg:h-14"
               type="button"
               onClick={openMaps}
               disabled={!activeAddress}
@@ -324,7 +324,7 @@ export default function Home() {
             <div className="grid grid-cols-3 gap-2">
               <label
                 className={[
-                  "grid h-16 cursor-pointer place-items-center gap-1 rounded-lg border text-xs font-bold transition",
+                  "grid h-11 cursor-pointer place-items-center gap-1 rounded-lg border text-xs font-bold transition sm:h-12 lg:h-16",
                   autoOpenMaps ? "border-neutral-950 bg-neutral-950 text-white" : "border-neutral-300 bg-neutral-50 text-neutral-500"
                 ].join(" ")}
                 aria-label={t.autoAria}
@@ -335,14 +335,14 @@ export default function Home() {
                 <span className="sr-only">{t.autoOpen}</span>
               </label>
 
-              <div className="grid h-16 place-items-center gap-1 rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600" title={t.confidence}>
+              <div className="grid h-11 place-items-center gap-1 rounded-lg border border-neutral-300 bg-neutral-50 text-xs font-bold text-neutral-600 sm:h-12 lg:h-16" title={t.confidence}>
                 <span className="text-sm tabular-nums text-neutral-950">{result ? `${Math.round(result.confidence * 100)}%` : "--"}</span>
                 <span className="sr-only">{t.confidence}</span>
               </div>
 
               <div
                 className={[
-                  "grid h-16 place-items-center gap-1 rounded-lg border text-xs font-bold",
+                  "grid h-11 place-items-center gap-1 rounded-lg border text-xs font-bold sm:h-12 lg:h-16",
                   error ? "border-red-200 bg-red-50 text-red-700" : "border-neutral-300 bg-neutral-50 text-neutral-600"
                 ].join(" ")}
                 title={error ?? t.status}
@@ -353,7 +353,7 @@ export default function Home() {
             </div>
 
             {result?.raw_text || result?.notes.length || error ? (
-              <div className="rounded-lg border border-neutral-300 bg-neutral-50 p-3 text-sm leading-6 text-neutral-700">
+              <div className="max-h-14 overflow-hidden rounded-lg border border-neutral-300 bg-neutral-50 p-2 text-xs leading-5 text-neutral-700 sm:max-h-16 sm:text-sm">
                 {error ? <p className="m-0 text-red-700">{error}</p> : null}
                 {result?.raw_text ? (
                   <p className="m-0 line-clamp-2">
