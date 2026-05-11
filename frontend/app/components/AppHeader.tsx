@@ -33,10 +33,10 @@ const labels = {
 
 function navClass(active: boolean) {
   return [
-    "inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98]",
+    "inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98]",
     active
       ? "border-neutral-950 bg-neutral-950 text-white"
-      : "border-neutral-300 bg-white text-neutral-800 shadow-sm hover:border-neutral-400 hover:bg-neutral-50"
+      : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50"
   ].join(" ");
 }
 
@@ -44,7 +44,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
   const t = labels[locale];
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3">
+    <header className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-300 bg-white p-3 shadow-sm">
       <Link className="inline-flex min-w-0 items-center gap-3" href="/" aria-label="Route Snap">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-neutral-950 text-white shadow-sm">
           <MapPinned size={22} aria-hidden="true" />
@@ -55,7 +55,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
         </span>
       </Link>
 
-      <nav className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2" aria-label="Route Snap">
+      <nav className="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 sm:justify-end" aria-label="Route Snap">
         <Link className={navClass(currentPage === "home")} href="/">
           {t.home}
         </Link>

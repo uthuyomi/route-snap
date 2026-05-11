@@ -65,7 +65,16 @@ const messages = {
     routeOrder: "ルート順",
     countUnit: "件",
     emptyOrder: "住所を追加すると順番が表示されます",
-    mapsLimit: "Google Mapsの仕様上、経由地が多い場合は一部が反映されないことがあります。その場合は住所リストを分割してください。"
+    mapsLimit: "Google Mapsの仕様上、経由地が多い場合は一部が反映されないことがあります。その場合は住所リストを分割してください。",
+    uploadPanel: "1. 取り込みと条件",
+    routePanel: "2. 順路作成",
+    uploadHelp: "住所ファイルを読み込んだあと、必要な行だけ修正して個別備考を追加できます。",
+    routeHelp: "ファイル内の順番をそのまま使うか、時間指定や優先度をAIに考慮させて移動順を作れます。",
+    imported: "取り込み",
+    ready: "有効",
+    plannedBy: "順路",
+    fileMode: "ファイル順",
+    aiMode: "AI順"
   },
   en: {
     readingImage: "Reading image",
@@ -92,7 +101,16 @@ const messages = {
     routeOrder: "Route Order",
     countUnit: "stops",
     emptyOrder: "The route order appears after you add addresses",
-    mapsLimit: "Google Maps may ignore some waypoints when there are many stops. Split the address list if needed."
+    mapsLimit: "Google Maps may ignore some waypoints when there are many stops. Split the address list if needed.",
+    uploadPanel: "1. Import and Conditions",
+    routePanel: "2. Create Route",
+    uploadHelp: "After importing files, you can edit individual rows and add per-stop notes.",
+    routeHelp: "Use the order inside the file, or let AI account for time windows and priorities.",
+    imported: "Imported",
+    ready: "Ready",
+    plannedBy: "Order",
+    fileMode: "File",
+    aiMode: "AI"
   }
 } satisfies Record<AppLocale, Record<string, string>>;
 
@@ -386,9 +404,31 @@ export default function BatchRoutePage() {
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
           <section className="grid gap-3 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="m-0 text-xs font-black uppercase tracking-wide text-neutral-500">{t.uploadPanel}</p>
+                <h1 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.addFiles}</h1>
+                <p className="m-0 mt-2 max-w-2xl text-sm font-medium leading-6 text-neutral-600">{t.uploadHelp}</p>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2">
+                  <span className="block text-lg font-black tabular-nums text-neutral-950">{stops.length}</span>
+                  <span className="block text-[11px] font-black text-neutral-500">{t.imported}</span>
+                </div>
+                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2">
+                  <span className="block text-lg font-black tabular-nums text-neutral-950">{usableStops.length}</span>
+                  <span className="block text-[11px] font-black text-neutral-500">{t.ready}</span>
+                </div>
+                <div className="rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2">
+                  <span className="block text-lg font-black text-neutral-950">{routeMode === "ai" ? t.aiMode : t.fileMode}</span>
+                  <span className="block text-[11px] font-black text-neutral-500">{t.plannedBy}</span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
               <button
-                className="inline-flex min-h-24 items-center justify-center gap-3 rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-4 text-sm font-bold text-neutral-700 transition hover:border-neutral-500 hover:bg-white active:scale-[0.99]"
+                className="inline-flex min-h-24 items-center justify-center gap-3 rounded-lg border border-dashed border-neutral-400 bg-neutral-50 px-4 text-sm font-black text-neutral-800 transition hover:border-neutral-600 hover:bg-white active:scale-[0.99]"
                 type="button"
                 onClick={() => inputRef.current?.click()}
               >
@@ -470,7 +510,13 @@ export default function BatchRoutePage() {
             </div>
           </section>
 
-          <section className="grid content-start gap-3 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm">
+          <section className="grid content-start gap-3 rounded-lg border border-neutral-300 bg-white p-4 shadow-sm lg:sticky lg:top-4">
+            <div>
+              <p className="m-0 text-xs font-black uppercase tracking-wide text-neutral-500">{t.routePanel}</p>
+              <h2 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.routeOrder}</h2>
+              <p className="m-0 mt-2 text-sm font-medium leading-6 text-neutral-600">{t.routeHelp}</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <button
                 className={[
@@ -520,10 +566,13 @@ export default function BatchRoutePage() {
               </div>
               <ol className="m-0 grid list-none gap-2 p-0">
                 {orderedStops.map((stop, index) => (
-                  <li key={stop.id} className="grid grid-cols-[2rem_1fr_auto] items-center gap-2 rounded-lg bg-white p-2 text-sm shadow-sm">
+                  <li key={stop.id} className="grid grid-cols-[2rem_1fr_auto] items-start gap-2 rounded-lg bg-white p-2 text-sm shadow-sm">
                     <span className="grid h-8 w-8 place-items-center rounded-lg bg-neutral-950 text-xs font-black text-white">{index + 1}</span>
-                    <span className="min-w-0 truncate font-semibold text-neutral-800">{stop.address}</span>
-                    {stop.status === "error" ? <XCircle className="text-red-600" size={17} aria-hidden="true" /> : <Check className="text-neutral-700" size={17} aria-hidden="true" />}
+                    <span className="min-w-0">
+                      <span className="block truncate font-bold text-neutral-900">{stop.address}</span>
+                      {stop.routeNote ? <span className="mt-1 block line-clamp-2 text-xs font-semibold leading-5 text-neutral-500">{stop.routeNote}</span> : null}
+                    </span>
+                    {stop.status === "error" ? <XCircle className="mt-1 text-red-600" size={17} aria-hidden="true" /> : <Check className="mt-1 text-neutral-700" size={17} aria-hidden="true" />}
                   </li>
                 ))}
               </ol>
