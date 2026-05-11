@@ -5,9 +5,9 @@ import {
   Camera,
   Check,
   ExternalLink,
+  ImagePlus,
   Loader2,
   Navigation,
-  RefreshCw,
   RotateCcw,
   ScanText,
   XCircle
@@ -39,6 +39,7 @@ const messages = {
     iosHint: "共有",
     homeHint: "ホーム",
     capture: "住所を撮影",
+    chooseImage: "画像を選択",
     analyze: "整形",
     analyzing: "解析中",
     retake: "再撮影",
@@ -55,6 +56,7 @@ const messages = {
     unknownError: "不明なエラーが発生しました",
     imageAlt: "撮影した住所画像",
     photoAria: "住所を撮影",
+    libraryAria: "スマホ内の画像から選択",
     analyzeAria: "AIで住所を整形",
     retakeAria: "撮り直し",
     resetAria: "リセット",
@@ -83,6 +85,7 @@ const messages = {
     iosHint: "Share",
     homeHint: "Home",
     capture: "Capture address",
+    chooseImage: "Choose image",
     analyze: "Format",
     analyzing: "Reading",
     retake: "Retake",
@@ -99,6 +102,7 @@ const messages = {
     unknownError: "An unknown error occurred",
     imageAlt: "Captured address image",
     photoAria: "Capture address",
+    libraryAria: "Choose an image from this device",
     analyzeAria: "Format address with AI",
     retakeAria: "Retake photo",
     resetAria: "Reset",
@@ -136,7 +140,8 @@ function getInitialLocale(): Locale {
 }
 
 export default function Home() {
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const libraryInputRef = useRef<HTMLInputElement | null>(null);
   const [locale, setLocale] = useState<Locale>(() => getInitialLocale());
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -156,8 +161,11 @@ export default function Home() {
     setResult(null);
     setManualAddress("");
     setError(null);
-    if (inputRef.current) {
-      inputRef.current.value = "";
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
+    if (libraryInputRef.current) {
+      libraryInputRef.current.value = "";
     }
   }
 
@@ -241,29 +249,55 @@ export default function Home() {
                 <button
                   className="grid h-full w-full place-items-center bg-white text-neutral-700 transition hover:bg-neutral-50"
                   type="button"
-                  onClick={() => inputRef.current?.click()}
+                  onClick={() => cameraInputRef.current?.click()}
                   aria-label={t.photoAria}
                   title={t.photoAria}
                 >
-                  <span className="grid place-items-center gap-3">
-                    <span className="grid h-16 w-16 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-950 shadow-sm sm:h-20 sm:w-20 lg:h-24 lg:w-24">
+                  <span className="grid grid-cols-2 gap-3">
+                    <span className="grid h-16 w-16 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-950 shadow-sm sm:h-20 sm:w-20 lg:h-24 lg:w-24" title={t.photoAria}>
                       <Camera className="h-8 w-8 sm:h-10 sm:w-10" aria-hidden="true" />
+                    </span>
+                    <span
+                      className="grid h-16 w-16 place-items-center rounded-lg border border-neutral-300 bg-neutral-50 text-neutral-950 shadow-sm sm:h-20 sm:w-20 lg:h-24 lg:w-24"
+                      role="button"
+                      tabIndex={0}
+                      title={t.libraryAria}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        libraryInputRef.current?.click();
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          libraryInputRef.current?.click();
+                        }
+                      }}
+                    >
+                      <ImagePlus className="h-8 w-8 sm:h-10 sm:w-10" aria-hidden="true" />
                     </span>
                     <span className="sr-only">{t.capture}</span>
                   </span>
                 </button>
               )}
               <input
-                ref={inputRef}
+                ref={cameraInputRef}
                 className="pointer-events-none absolute h-px w-px opacity-0"
                 type="file"
                 accept="image/*"
                 capture="environment"
                 onChange={onPickImage}
               />
+              <input
+                ref={libraryInputRef}
+                className="pointer-events-none absolute h-px w-px opacity-0"
+                type="file"
+                accept="image/*"
+                onChange={onPickImage}
+              />
             </div>
 
-            <div className="grid grid-cols-[1fr_auto_auto] gap-2">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2">
               <button
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-4 text-sm font-black text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.98] disabled:bg-neutral-300 disabled:text-neutral-500 disabled:shadow-none sm:h-12 lg:h-14"
                 type="button"
@@ -275,9 +309,13 @@ export default function Home() {
                 {isLoading ? <Loader2 className="animate-spin" size={22} aria-hidden="true" /> : <ScanText size={22} aria-hidden="true" />}
                 <span className="sr-only">{isLoading ? t.analyzing : t.analyze}</span>
               </button>
-              <button className={iconButtonClass()} type="button" onClick={() => inputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
-                <RefreshCw size={19} aria-hidden="true" />
+              <button className={iconButtonClass()} type="button" onClick={() => cameraInputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
+                <Camera size={19} aria-hidden="true" />
                 <span className="sr-only">{t.retake}</span>
+              </button>
+              <button className={iconButtonClass()} type="button" onClick={() => libraryInputRef.current?.click()} aria-label={t.libraryAria} title={t.libraryAria}>
+                <ImagePlus size={19} aria-hidden="true" />
+                <span className="sr-only">{t.chooseImage}</span>
               </button>
               <button className={iconButtonClass()} type="button" onClick={resetCapture} aria-label={t.resetAria} title={t.resetAria}>
                 <RotateCcw size={20} aria-hidden="true" />
