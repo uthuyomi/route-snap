@@ -15,6 +15,7 @@ import {
 import Image from "next/image";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { AppHeader } from "../components/AppHeader";
+import { prepareImageForUpload } from "../lib/imageUpload";
 
 type Locale = "ja" | "en";
 
@@ -191,8 +192,9 @@ export default function Home() {
     setError(null);
 
     try {
+      const uploadFile = await prepareImageForUpload(imageFile);
       const formData = new FormData();
-      formData.append("image", imageFile);
+      formData.append("image", uploadFile);
       formData.append("locale", locale);
 
       const response = await fetch("/api/parse-address", {

@@ -3,6 +3,7 @@
 import { ArrowUpDown, Bot, Check, ExternalLink, FileText, ImagePlus, Loader2, Navigation, Trash2, Upload, XCircle } from "lucide-react";
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
+import { prepareImageForUpload } from "../lib/imageUpload";
 
 type StopStatus = "ready" | "reading" | "error";
 type RouteMode = "file" | "ai";
@@ -248,11 +249,12 @@ export default function BatchRoutePage() {
       }
     ]);
 
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("locale", locale);
-
     try {
+      const uploadFile = await prepareImageForUpload(file);
+      const formData = new FormData();
+      formData.append("image", uploadFile);
+      formData.append("locale", locale);
+
       const response = await fetch("/api/parse-address", {
         method: "POST",
         body: formData
