@@ -8,12 +8,8 @@ const routeSnapApiToken = process.env.ROUTE_SNAP_API_TOKEN;
 
 export async function POST(request: NextRequest) {
   try {
+    const formData = await request.formData();
     const headers = new Headers();
-    const contentType = request.headers.get("content-type");
-
-    if (contentType) {
-      headers.set("content-type", contentType);
-    }
 
     if (routeSnapApiToken) {
       headers.set("X-Route-Snap-Token", routeSnapApiToken);
@@ -21,10 +17,9 @@ export async function POST(request: NextRequest) {
 
     const response = await fetch(`${backendApiBaseUrl}/api/parse-address`, {
       method: "POST",
-      body: request.body,
-      headers,
-      duplex: "half"
-    } as RequestInit & { duplex: "half" });
+      body: formData,
+      headers
+    });
 
     const responseContentType = response.headers.get("content-type") ?? "application/json";
     const body = await response.text();

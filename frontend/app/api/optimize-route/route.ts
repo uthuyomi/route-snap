@@ -8,6 +8,7 @@ const routeSnapApiToken = process.env.ROUTE_SNAP_API_TOKEN;
 
 export async function POST(request: NextRequest) {
   try {
+    const body = await request.text();
     const headers = new Headers({
       "content-type": request.headers.get("content-type") ?? "application/json"
     });
@@ -18,10 +19,9 @@ export async function POST(request: NextRequest) {
 
     const response = await fetch(`${backendApiBaseUrl}/api/optimize-route`, {
       method: "POST",
-      body: request.body,
-      headers,
-      duplex: "half"
-    } as RequestInit & { duplex: "half" });
+      body,
+      headers
+    });
 
     const contentType = response.headers.get("content-type") ?? "application/json";
     const responseBody = await response.text();

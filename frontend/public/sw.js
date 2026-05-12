@@ -1,4 +1,4 @@
-const CACHE_NAME = "route-snap-v2";
+const CACHE_NAME = "route-snap-v3";
 const APP_SHELL = ["/", "/manifest.json", "/image/icon/route-snap.ico", "/image/icon/route-snap.png"];
 
 self.addEventListener("install", (event) => {
