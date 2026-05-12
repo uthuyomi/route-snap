@@ -17,9 +17,15 @@ type BatchStop = {
   routeNote: string;
 };
 
-type AddressResult = {
+type AddressCandidate = {
+  label: string;
   normalized_address: string;
   confidence: number;
+  notes: string[];
+};
+
+type AddressListResult = {
+  addresses: AddressCandidate[];
   notes: string[];
 };
 
@@ -254,27 +260,63 @@ export default function BatchRoutePage() {
       const formData = new FormData();
       formData.append("image", uploadFile);
       formData.append("locale", locale);
+      formData.append("notes", notes);
 
-      const response = await fetch("/api/parse-address", {
+      const response = await fetch("/api/parse-addresses", {
         method: "POST",
         body: formData
       });
-      const payload = (await response.json()) as AddressResult & { detail?: string };
+      const payload = (await response.json()) as AddressListResult & { detail?: string };
       if (!response.ok) {
         throw new Error(payload.detail ?? t.imageFailed);
       }
-      setStops((current) =>
-        current.map((stop) =>
+      const addresses = (payload.addresses ?? []).filter((address) => address.normalized_address?.trim());
+
+      if (!addresses.length) {
+        setStops((current) =>
+          current.map((stop) =>
+            stop.id === id
+              ? {
+                  ...stop,
+                  status: "error",
+                  note: payload.notes?.join(" / ") || t.imageFailed
+                }
+              : stop
+          )
+        );
+        return;
+      }
+
+      setStops((current) => {
+        const firstAddress = addresses[0];
+        const additionalStops = addresses.slice(1).map((address, index) => ({
+          id: createId(),
+          sourceName: `${file.name} #${index + 2}`,
+          address: address.normalized_address,
+          routeNote: address.label || "",
+          status: "ready" as StopStatus,
+          note: address.notes?.join(" / ") || `${t.confidence} ${Math.round((address.confidence ?? 0) * 100)}%`
+        }));
+
+        return current.flatMap((stop) =>
           stop.id === id
-            ? {
-                ...stop,
-                address: payload.normalized_address,
-                status: payload.normalized_address ? "ready" : "error",
-                note: payload.notes?.join(" / ") || `${t.confidence} ${Math.round((payload.confidence ?? 0) * 100)}%`
-              }
-            : stop
-        )
-      );
+            ? [
+                {
+                  ...stop,
+                  sourceName: addresses.length > 1 ? `${file.name} #1` : file.name,
+                  address: firstAddress.normalized_address,
+                  routeNote: firstAddress.label || stop.routeNote,
+                  status: "ready" as StopStatus,
+                  note:
+                    firstAddress.notes?.join(" / ") ||
+                    payload.notes?.join(" / ") ||
+                    `${t.confidence} ${Math.round((firstAddress.confidence ?? 0) * 100)}%`
+                },
+                ...additionalStops
+              ]
+            : [stop]
+        );
+      });
     } catch (caught) {
       setStops((current) =>
         current.map((stop) =>

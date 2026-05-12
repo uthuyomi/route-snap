@@ -21,6 +21,19 @@ class AddressResult(BaseModel):
     notes: list[str] = Field(default_factory=list)
 
 
+class AddressCandidate(BaseModel):
+    label: str = ""
+    raw_text: str = ""
+    normalized_address: str = ""
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    notes: list[str] = Field(default_factory=list)
+
+
+class AddressListResult(BaseModel):
+    addresses: list[AddressCandidate] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
 class RouteStop(BaseModel):
     index: int
     address: str
@@ -113,12 +126,19 @@ def extract_json(text: str) -> dict[str, Any]:
         return json.loads(match.group(0))
 
 
-def build_prompt(locale: Locale) -> str:
+def build_prompt(locale: Locale, user_notes: str = "") -> str:
     response_language = "Japanese" if locale == "ja" else "English"
+    notes_block = user_notes.strip() or "(none)"
     return f"""
 Read the address-like text in the image and normalize it for delivery or navigation search.
 Return JSON only. Do not wrap it in Markdown.
 Write notes in {response_language}.
+Use the user notes to decide which address should be the destination when the image contains multiple candidates.
+For example, if the notes mention old/new/current addresses, before/after moving, time windows, priority, or visit order, choose the address that best matches those instructions.
+If the notes conflict with the image or are ambiguous, still return the best destination address and explain the ambiguity in notes.
+
+User notes:
+{notes_block}
 
 Expected schema:
 {{
@@ -129,6 +149,40 @@ Expected schema:
 }}
 
 If no address is found, set normalized_address to an empty string and confidence to 0.
+For Japanese addresses, preserve Japanese address order and use standard Japanese address notation.
+""".strip()
+
+
+def build_multi_address_prompt(locale: Locale, user_notes: str = "") -> str:
+    response_language = "Japanese" if locale == "ja" else "English"
+    notes_block = user_notes.strip() or "(none)"
+    return f"""
+Read every delivery or navigation address in the image.
+Return JSON only. Do not wrap it in Markdown.
+Write labels and notes in {response_language}.
+Do not collapse multiple addresses into one. If the image contains old/new/current addresses, before/after moving addresses, sender/recipient addresses, or multiple destinations, return each useful destination as a separate address item.
+Use the user notes to label or prioritize candidates, but still return all address candidates that could be visited.
+Exclude postal codes, recipient names, phone numbers, and building owner names unless they are needed to search the destination.
+If a building name, room number, company name, or landmark helps navigation, keep it in normalized_address or mention it in notes.
+
+User notes:
+{notes_block}
+
+Expected schema:
+{{
+  "addresses": [
+    {{
+      "label": "short label such as old address, new address, destination 1, destination 2",
+      "raw_text": "text read for this candidate",
+      "normalized_address": "the most complete address possible",
+      "confidence": 0.0,
+      "notes": ["short notes about ambiguity, missing parts, or why this candidate matters"]
+    }}
+  ],
+  "notes": ["overall short notes"]
+}}
+
+If no address is found, return an empty addresses array.
 For Japanese addresses, preserve Japanese address order and use standard Japanese address notation.
 """.strip()
 
@@ -192,6 +246,7 @@ def health_config() -> dict[str, str | bool]:
 async def parse_address(
     image: UploadFile = File(...),
     locale: str = Form(default="ja"),
+    notes: str = Form(default=""),
     x_route_snap_token: str | None = Header(default=None),
 ) -> AddressResult:
     active_locale = normalize_locale(locale)
@@ -221,7 +276,7 @@ async def parse_address(
                 {
                     "role": "user",
                     "content": [
-                        {"type": "input_text", "text": build_prompt(active_locale)},
+                        {"type": "input_text", "text": build_prompt(active_locale, notes)},
                         {"type": "input_image", "image_url": data_url, "detail": "high"},
                     ],
                 }
@@ -234,6 +289,59 @@ async def parse_address(
     try:
         payload = extract_json(response.output_text)
         return AddressResult.model_validate(payload)
+    except Exception as exc:
+        detail = f"{error_message(active_locale, 'json_failed')}: {exc}"
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+
+@app.post("/api/parse-addresses", response_model=AddressListResult)
+async def parse_addresses(
+    image: UploadFile = File(...),
+    locale: str = Form(default="ja"),
+    notes: str = Form(default=""),
+    x_route_snap_token: str | None = Header(default=None),
+) -> AddressListResult:
+    active_locale = normalize_locale(locale)
+    verify_api_token(x_route_snap_token)
+
+    if not image.content_type or not image.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail=error_message(active_locale, "image_required"))
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail=error_message(active_locale, "api_key_missing"))
+
+    image_bytes = await image.read()
+    if len(image_bytes) > 8 * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=error_message(active_locale, "image_too_large"))
+
+    encoded = base64.b64encode(image_bytes).decode("utf-8")
+    data_url = f"data:{image.content_type};base64,{encoded}"
+
+    client = get_openai_client(api_key)
+    model = os.getenv("OPENAI_MODEL", "gpt-5.5")
+
+    try:
+        response = await client.responses.create(
+            model=model,
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": build_multi_address_prompt(active_locale, notes)},
+                        {"type": "input_image", "image_url": data_url, "detail": "high"},
+                    ],
+                }
+            ],
+        )
+    except Exception as exc:
+        detail = f"{error_message(active_locale, 'ai_failed')}: {exc}"
+        raise HTTPException(status_code=502, detail=detail) from exc
+
+    try:
+        result = AddressListResult.model_validate(extract_json(response.output_text))
+        result.addresses = [address for address in result.addresses if address.normalized_address.strip()]
+        return result
     except Exception as exc:
         detail = f"{error_message(active_locale, 'json_failed')}: {exc}"
         raise HTTPException(status_code=502, detail=detail) from exc
