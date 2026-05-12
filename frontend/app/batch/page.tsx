@@ -4,6 +4,9 @@ import { ArrowUpDown, Bot, Check, ExternalLink, FileText, ImagePlus, Loader2, Na
 import { ChangeEvent, useMemo, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
 import { prepareImageForUpload } from "../lib/imageUpload";
+import { usePreferredLocale } from "../lib/locale";
+import { buildRouteMapsUrl, getCurrentPosition } from "../lib/maps";
+import type { Coordinates } from "../lib/maps";
 
 type StopStatus = "ready" | "reading" | "error";
 type RouteMode = "file" | "ai";
@@ -32,6 +35,11 @@ type AddressListResult = {
 type OptimizeResult = {
   ordered_indices: number[];
   notes: string[];
+};
+
+type OptimizeRequestOrigin = {
+  latitude: number;
+  longitude: number;
 };
 
 const messages = {
@@ -109,11 +117,6 @@ const messages = {
   }
 } satisfies Record<AppLocale, Record<string, string>>;
 
-function getInitialLocale(): AppLocale {
-  if (typeof navigator === "undefined") return "ja";
-  return navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en";
-}
-
 function createId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
@@ -173,22 +176,6 @@ function extractTextStops(fileName: string, text: string): BatchStop[] {
     }));
 }
 
-function buildMapsUrl(stops: BatchStop[]) {
-  const addresses = stops.map((stop) => stop.address.trim()).filter(Boolean);
-  if (!addresses.length) return "";
-
-  if (addresses.length === 1) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addresses[0])}&travelmode=driving`;
-  }
-
-  const origin = encodeURIComponent(addresses[0]);
-  const destination = encodeURIComponent(addresses[addresses.length - 1]);
-  const waypoints = addresses.slice(1, -1).map(encodeURIComponent).join("|");
-  const waypointPart = waypoints ? `&waypoints=${waypoints}` : "";
-
-  return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}${waypointPart}&travelmode=driving`;
-}
-
 function buttonClass(active = true) {
   return [
     "inline-flex h-12 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98]",
@@ -212,9 +199,17 @@ async function runLimited<T>(items: T[], limit: number, task: (item: T) => Promi
   await Promise.all(workers);
 }
 
+function toOptimizeOrigin(origin: Coordinates | null): OptimizeRequestOrigin | undefined {
+  if (!origin) return undefined;
+  return {
+    latitude: origin.latitude,
+    longitude: origin.longitude
+  };
+}
+
 export default function BatchRoutePage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [locale, setLocale] = useState<AppLocale>(() => getInitialLocale());
+  const [locale, setLocale] = usePreferredLocale();
   const [stops, setStops] = useState<BatchStop[]>([]);
   const [routeOrderIds, setRouteOrderIds] = useState<string[]>([]);
   const [routeMode, setRouteMode] = useState<RouteMode>("file");
@@ -233,7 +228,8 @@ export default function BatchRoutePage() {
     const missing = usableStops.filter((stop) => !routeOrderIds.includes(stop.id));
     return [...ordered, ...missing];
   }, [routeOrderIds, usableStops]);
-  const mapsUrl = useMemo(() => buildMapsUrl(orderedStops), [orderedStops]);
+  const routeAddresses = useMemo(() => orderedStops.map((stop) => stop.address.trim()).filter(Boolean), [orderedStops]);
+  const mapsUrl = useMemo(() => buildRouteMapsUrl(routeAddresses), [routeAddresses]);
 
   function clearInput() {
     if (inputRef.current) {
@@ -413,6 +409,7 @@ export default function BatchRoutePage() {
     setRouteNotes([]);
 
     try {
+      const origin = await getCurrentPosition();
       const response = await fetch("/api/optimize-route", {
         method: "POST",
         headers: {
@@ -421,6 +418,7 @@ export default function BatchRoutePage() {
         body: JSON.stringify({
           locale,
           notes,
+          origin: toOptimizeOrigin(origin),
           stops: usableStops.map((stop, index) => ({
             index,
             address: stop.address,
@@ -442,9 +440,11 @@ export default function BatchRoutePage() {
     }
   }
 
-  function openMaps() {
+  async function openMaps() {
     if (!mapsUrl) return;
-    window.location.assign(mapsUrl);
+
+    const origin = await getCurrentPosition();
+    window.location.assign(buildRouteMapsUrl(routeAddresses, origin ?? undefined));
   }
 
   return (

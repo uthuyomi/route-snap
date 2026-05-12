@@ -13,11 +13,11 @@ import {
   XCircle
 } from "lucide-react";
 import Image from "next/image";
-import { ChangeEvent, useMemo, useRef, useState } from "react";
-import { AppHeader } from "../components/AppHeader";
+import { ChangeEvent, useRef, useState } from "react";
+import { AppHeader, AppLocale } from "../components/AppHeader";
 import { prepareImageForUpload } from "../lib/imageUpload";
-
-type Locale = "ja" | "en";
+import { usePreferredLocale } from "../lib/locale";
+import { buildSingleMapsUrl, getCurrentPosition } from "../lib/maps";
 
 type AddressResult = {
   raw_text: string;
@@ -119,12 +119,7 @@ const messages = {
     readyPhoto: "Image selected",
     mapsHelp: "You can edit the address before opening Maps. Adding building names or room numbers improves search accuracy."
   }
-} satisfies Record<Locale, Record<string, string>>;
-
-function buildMapsUrl(address: string) {
-  const destination = encodeURIComponent(address.trim());
-  return `https://www.google.com/maps/dir/?api=1&destination=${destination}&travelmode=driving`;
-}
+} satisfies Record<AppLocale, Record<string, string>>;
 
 function iconButtonClass(active = true) {
   return [
@@ -135,15 +130,10 @@ function iconButtonClass(active = true) {
   ].join(" ");
 }
 
-function getInitialLocale(): Locale {
-  if (typeof navigator === "undefined") return "ja";
-  return navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en";
-}
-
 export default function Home() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const libraryInputRef = useRef<HTMLInputElement | null>(null);
-  const [locale, setLocale] = useState<Locale>(() => getInitialLocale());
+  const [locale, setLocale] = usePreferredLocale();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<AddressResult | null>(null);
@@ -154,7 +144,6 @@ export default function Home() {
 
   const t = messages[locale];
   const activeAddress = (manualAddress || result?.normalized_address || "").trim();
-  const mapsUrl = useMemo(() => (activeAddress ? buildMapsUrl(activeAddress) : ""), [activeAddress]);
 
   function resetCapture() {
     setImageFile(null);
@@ -211,7 +200,7 @@ export default function Home() {
       setManualAddress(payload.normalized_address ?? "");
 
       if (autoOpenMaps && payload.normalized_address) {
-        window.location.assign(buildMapsUrl(payload.normalized_address));
+        openMapsAddress(payload.normalized_address);
       }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t.unknownError);
@@ -220,9 +209,16 @@ export default function Home() {
     }
   }
 
+  async function openMapsAddress(address: string) {
+    const destination = address.trim();
+    if (!destination) return;
+
+    const origin = await getCurrentPosition();
+    window.location.assign(buildSingleMapsUrl(destination, origin ?? undefined));
+  }
+
   function openMaps() {
-    if (!mapsUrl) return;
-    window.location.assign(mapsUrl);
+    openMapsAddress(activeAddress);
   }
 
   return (

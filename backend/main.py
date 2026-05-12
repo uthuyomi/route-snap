@@ -40,10 +40,16 @@ class RouteStop(BaseModel):
     note: str = ""
 
 
+class RouteOrigin(BaseModel):
+    latitude: float
+    longitude: float
+
+
 class RouteOptimizeRequest(BaseModel):
     stops: list[RouteStop] = Field(default_factory=list, min_length=1)
     notes: str = ""
     locale: Locale = "ja"
+    origin: RouteOrigin | None = None
 
 
 class RouteOptimizeResult(BaseModel):
@@ -187,15 +193,21 @@ For Japanese addresses, preserve Japanese address order and use standard Japanes
 """.strip()
 
 
-def build_route_prompt(stops: list[RouteStop], notes: str, locale: Locale) -> str:
+def build_route_prompt(stops: list[RouteStop], notes: str, locale: Locale, origin: RouteOrigin | None = None) -> str:
     response_language = "Japanese" if locale == "ja" else "English"
     stops_json = json.dumps([stop.model_dump() for stop in stops], ensure_ascii=False)
+    origin_text = f"{origin.latitude},{origin.longitude}" if origin else "(not provided)"
     return f"""
 You are planning a practical driving route for delivery or field visits.
 Return JSON only. Do not wrap it in Markdown.
 Use every stop index exactly once. Do not invent, remove, or duplicate stops.
+If current location is provided, optimize the first stop from that current location.
+If current location is not provided, optimize only the order among the stops.
 Respect the global notes and each stop note as much as possible, especially time windows, priority, and constraints.
 Write notes in {response_language}.
+
+Current location:
+{origin_text}
 
 Stops:
 {stops_json}
@@ -372,7 +384,7 @@ async def optimize_route(
             input=[
                 {
                     "role": "user",
-                    "content": [{"type": "input_text", "text": build_route_prompt(stops, payload.notes, active_locale)}],
+                    "content": [{"type": "input_text", "text": build_route_prompt(stops, payload.notes, active_locale, payload.origin)}],
                 }
             ],
         )
