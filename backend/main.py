@@ -7,7 +7,7 @@ from typing import Any, Literal
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
+from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
 
@@ -63,6 +63,8 @@ ERROR_MESSAGES = {
 
 
 app = FastAPI(title="Route Snap API")
+openai_client: AsyncOpenAI | None = None
+openai_client_key: str | None = None
 
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 allowed_origin_regex = os.getenv("ALLOWED_ORIGIN_REGEX", r"https://.*\.vercel\.app")
@@ -90,6 +92,15 @@ def verify_api_token(provided_token: str | None) -> None:
         return
     if not provided_token or not hmac.compare_digest(provided_token, expected_token):
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def get_openai_client(api_key: str) -> AsyncOpenAI:
+    global openai_client, openai_client_key
+
+    if openai_client is None or openai_client_key != api_key:
+        openai_client = AsyncOpenAI(api_key=api_key)
+        openai_client_key = api_key
+    return openai_client
 
 
 def extract_json(text: str) -> dict[str, Any]:
@@ -200,11 +211,11 @@ async def parse_address(
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     data_url = f"data:{image.content_type};base64,{encoded}"
 
-    client = OpenAI(api_key=api_key)
+    client = get_openai_client(api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-5.5")
 
     try:
-        response = client.responses.create(
+        response = await client.responses.create(
             model=model,
             input=[
                 {
@@ -229,7 +240,7 @@ async def parse_address(
 
 
 @app.post("/api/optimize-route", response_model=RouteOptimizeResult)
-def optimize_route(
+async def optimize_route(
     payload: RouteOptimizeRequest,
     x_route_snap_token: str | None = Header(default=None),
 ) -> RouteOptimizeResult:
@@ -244,11 +255,11 @@ def optimize_route(
     if not api_key:
         raise HTTPException(status_code=500, detail=error_message(active_locale, "api_key_missing"))
 
-    client = OpenAI(api_key=api_key)
+    client = get_openai_client(api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-5.5")
 
     try:
-        response = client.responses.create(
+        response = await client.responses.create(
             model=model,
             input=[
                 {

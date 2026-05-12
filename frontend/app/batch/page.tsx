@@ -191,6 +191,20 @@ function buttonClass(active = true) {
   ].join(" ");
 }
 
+async function runLimited<T>(items: T[], limit: number, task: (item: T) => Promise<void>) {
+  const queue = [...items];
+  const workers = Array.from({ length: Math.min(limit, queue.length) }, async () => {
+    while (queue.length) {
+      const item = queue.shift();
+      if (item) {
+        await task(item);
+      }
+    }
+  });
+
+  await Promise.all(workers);
+}
+
 export default function BatchRoutePage() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [locale, setLocale] = useState<AppLocale>(() => getInitialLocale());
@@ -303,13 +317,17 @@ export default function BatchRoutePage() {
     setRouteNotes([]);
 
     try {
+      const imageFiles: File[] = [];
+
       for (const file of files) {
         if (file.type.startsWith("image/")) {
-          await readImageFile(file);
+          imageFiles.push(file);
         } else {
           await readTextFile(file);
         }
       }
+
+      await runLimited(imageFiles, 3, readImageFile);
       setRouteMode("file");
       setRouteOrderIds([]);
     } catch (caught) {
