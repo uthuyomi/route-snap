@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Download, ExternalLink, Home, HomeIcon, Languages, MapPinned, Menu, MonitorDown, Route, ScanText, Share2, Smartphone, X } from "lucide-react";
 import Link from "next/link";
@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 
 export type AppLocale = "ja" | "en";
 type AppPage = "home" | "single" | "batch";
-type InstallTarget = "desktop" | "mobile";
 type InstallStatus = "idle" | "ready" | "installed";
 
 type BeforeInstallPromptEvent = Event & {
@@ -30,13 +29,10 @@ const labels = {
     language: "言語を切り替え",
     menu: "メニュー",
     close: "閉じる",
-    install: "端末に保存",
-    desktop: "PC",
-    mobile: "スマホ",
-    installed: "保存済み",
-    ready: "保存",
-    manual: "共有",
-    launch: "起動",
+    install: "アプリをインストール",
+    installed: "インストール済み",
+    manual: "共有から追加",
+    launch: "アプリを開く",
     share: "共有",
     homeScreen: "ホーム"
   },
@@ -49,13 +45,10 @@ const labels = {
     language: "Change language",
     menu: "Menu",
     close: "Close",
-    install: "Save to device",
-    desktop: "Desktop",
-    mobile: "Mobile",
-    installed: "Saved",
-    ready: "Save",
-    manual: "Share",
-    launch: "Launch",
+    install: "Install app",
+    installed: "Installed",
+    manual: "Add from Share",
+    launch: "Open app",
     share: "Share",
     homeScreen: "Home"
   }
@@ -143,22 +136,22 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
     }
   }
 
-  function installLabel(target: InstallTarget) {
-    const targetLabel = target === "mobile" ? t.mobile : t.desktop;
-    const statusLabel = installStatus === "installed" ? t.launch : isAppleDevice && target === "mobile" ? t.manual : t.ready;
-    return `${targetLabel} ${statusLabel}`;
+  function installLabel() {
+    if (installStatus === "installed") return t.launch;
+    if (isAppleDevice) return t.manual;
+    return t.install;
   }
 
-  function renderInstallButton(target: InstallTarget) {
-    const Icon = target === "mobile" ? Smartphone : MonitorDown;
-    const label = installLabel(target);
-    const canAct = installStatus === "ready" || installStatus === "installed" || (isAppleDevice && target === "mobile");
+  function renderInstallButton() {
+    const Icon = isAppleDevice ? Smartphone : MonitorDown;
+    const label = installLabel();
+    const canAct = installStatus === "ready" || installStatus === "installed" || isAppleDevice;
 
     return (
       <button
         className={[
           "grid h-12 grid-cols-[2.5rem_1fr_auto] items-center gap-2 rounded-lg border px-2 text-sm font-bold transition active:scale-[0.98]",
-          canAct ? "border-neutral-300 bg-white text-neutral-800 hover:border-neutral-500 hover:bg-neutral-50" : "border-neutral-200 bg-neutral-100 text-neutral-400"
+          canAct ? "border-neutral-300 bg-white text-neutral-800 hover:border-neutral-500 hover:bg-neutral-50" : "border-neutral-200 bg-neutral-100 text-neutral-500"
         ].join(" ")}
         type="button"
         onClick={installApp}
@@ -166,7 +159,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
         title={label}
       >
         <Icon size={18} aria-hidden="true" />
-        <span className="truncate text-left">{target === "mobile" ? t.mobile : t.desktop}</span>
+        <span className="truncate text-left">{label}</span>
         {installStatus === "installed" ? <ExternalLink size={17} aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}
       </button>
     );
@@ -180,7 +173,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
         </span>
         <span className="min-w-0 hidden sm:block">
           <span className="block text-lg font-bold leading-6 text-neutral-950">Route Snap</span>
-          <span className="sr-only">{t.subtitle}</span>
+          <span className="block truncate text-xs font-semibold text-neutral-500">{t.subtitle}</span>
         </span>
       </Link>
 
@@ -193,6 +186,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
         title={isMenuOpen ? t.close : t.menu}
       >
         {isMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
+        <span>{isMenuOpen ? t.close : t.menu}</span>
       </button>
 
       {isMenuOpen ? (
@@ -216,17 +210,16 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
           </nav>
 
           <div className="grid gap-2 border-t border-neutral-200 pt-2">
-            {renderInstallButton("desktop")}
-            {renderInstallButton("mobile")}
+            {renderInstallButton()}
             {isAppleDevice && installStatus !== "installed" ? (
               <div className="grid grid-cols-2 gap-2">
-                <div className="grid h-11 place-items-center rounded-lg border border-neutral-300 bg-neutral-50" title={t.share}>
+                <div className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-neutral-50 text-sm font-bold" title={t.share}>
                   <Share2 size={18} aria-hidden="true" />
-                  <span className="sr-only">{t.share}</span>
+                  <span>{t.share}</span>
                 </div>
-                <div className="grid h-11 place-items-center rounded-lg border border-neutral-300 bg-neutral-50" title={t.homeScreen}>
+                <div className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-neutral-50 text-sm font-bold" title={t.homeScreen}>
                   <HomeIcon size={18} aria-hidden="true" />
-                  <span className="sr-only">{t.homeScreen}</span>
+                  <span>{t.homeScreen}</span>
                 </div>
               </div>
             ) : null}
@@ -234,7 +227,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
 
           <button className={menuItemClass(false)} type="button" onClick={onToggleLocale} aria-label={t.language} title={t.language}>
             <Languages size={18} aria-hidden="true" />
-            <span>{locale.toUpperCase()}</span>
+            <span>{locale === "ja" ? "日本語" : "English"}</span>
             <span />
           </button>
         </div>
@@ -242,3 +235,4 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
     </header>
   );
 }
+
