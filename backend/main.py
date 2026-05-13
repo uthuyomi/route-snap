@@ -142,6 +142,8 @@ Write notes in {response_language}.
 Use the user notes to decide which address should be the destination when the image contains multiple candidates.
 For example, if the notes mention old/new/current addresses, before/after moving, time windows, priority, or visit order, choose the address that best matches those instructions.
 If the notes conflict with the image or are ambiguous, still return the best destination address and explain the ambiguity in notes.
+Preserve any visible postal code, prefecture, city/ward/town, block number, building name, floor, and room number when they help map search.
+Do not invent missing address parts. If an address is incomplete or could match multiple places, keep confidence low and explain the risk in notes.
 
 User notes:
 {notes_block}
@@ -149,7 +151,7 @@ User notes:
 Expected schema:
 {{
   "raw_text": "text read from the image",
-  "normalized_address": "the most complete address possible, excluding postal code and recipient name",
+  "normalized_address": "the most complete map-searchable address possible, including postal code when visible and excluding recipient name",
   "confidence": 0.0,
   "notes": ["short notes about missing, ambiguous, or unreadable parts"]
 }}
@@ -168,8 +170,10 @@ Return JSON only. Do not wrap it in Markdown.
 Write labels and notes in {response_language}.
 Do not collapse multiple addresses into one. If the image contains old/new/current addresses, before/after moving addresses, sender/recipient addresses, or multiple destinations, return each useful destination as a separate address item.
 Use the user notes to label or prioritize candidates, but still return all address candidates that could be visited.
-Exclude postal codes, recipient names, phone numbers, and building owner names unless they are needed to search the destination.
+Keep postal codes when visible because they help map search disambiguation.
+Exclude recipient names, phone numbers, and building owner names unless they are needed to search the destination.
 If a building name, room number, company name, or landmark helps navigation, keep it in normalized_address or mention it in notes.
+Do not invent missing address parts. If an address is incomplete or could match multiple places, keep confidence low and explain the risk in notes.
 
 User notes:
 {notes_block}

@@ -16,6 +16,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { AppHeader, AppLocale } from "./components/AppHeader";
+import { LegalFooter } from "./components/LegalFooter";
 import { usePreferredLocale } from "./lib/locale";
 
 const messages = {
@@ -231,6 +232,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <LegalFooter locale={locale} />
       </div>
     </main>
   );

@@ -1,11 +1,11 @@
 ﻿"use client";
 
-import { Download, ExternalLink, Home, HomeIcon, Languages, MapPinned, Menu, MonitorDown, Route, ScanText, Share2, Smartphone, X } from "lucide-react";
+import { CreditCard, Download, ExternalLink, Home, HomeIcon, Languages, MapPinned, Menu, MonitorDown, Route, ScanText, Share2, Smartphone, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 export type AppLocale = "ja" | "en";
-type AppPage = "home" | "single" | "batch";
+type AppPage = "home" | "single" | "batch" | "pricing";
 type InstallStatus = "idle" | "ready" | "installed";
 
 type BeforeInstallPromptEvent = Event & {
@@ -16,7 +16,7 @@ type BeforeInstallPromptEvent = Event & {
 type AppHeaderProps = {
   locale: AppLocale;
   currentPage: AppPage;
-  onToggleLocale: () => void;
+  onToggleLocale?: () => void;
 };
 
 const labels = {
@@ -25,6 +25,8 @@ const labels = {
     home: "トップ",
     single: "単発",
     batch: "複数",
+    pricing: "料金",
+    account: "アカウント",
     paid: "有料",
     language: "言語を切り替え",
     menu: "メニュー",
@@ -41,6 +43,8 @@ const labels = {
     home: "Home",
     single: "Single",
     batch: "Batch",
+    pricing: "Pricing",
+    account: "Account",
     paid: "Paid",
     language: "Change language",
     menu: "Menu",
@@ -207,6 +211,16 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
               <span>{t.batch}</span>
               <span className="rounded bg-current/10 px-1.5 py-0.5 text-[10px] font-black">{t.paid}</span>
             </Link>
+            <Link className={menuItemClass(currentPage === "pricing")} href="/pricing" onClick={() => setIsMenuOpen(false)}>
+              <CreditCard size={18} aria-hidden="true" />
+              <span>{t.pricing}</span>
+              <span />
+            </Link>
+            <Link className={menuItemClass(false)} href="/account" onClick={() => setIsMenuOpen(false)}>
+              <UserRound size={18} aria-hidden="true" />
+              <span>{t.account}</span>
+              <span />
+            </Link>
           </nav>
 
           <div className="grid gap-2 border-t border-neutral-200 pt-2">
@@ -225,11 +239,13 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
             ) : null}
           </div>
 
-          <button className={menuItemClass(false)} type="button" onClick={onToggleLocale} aria-label={t.language} title={t.language}>
-            <Languages size={18} aria-hidden="true" />
-            <span>{locale === "ja" ? "日本語" : "English"}</span>
-            <span />
-          </button>
+          {onToggleLocale ? (
+            <button className={menuItemClass(false)} type="button" onClick={onToggleLocale} aria-label={t.language} title={t.language}>
+              <Languages size={18} aria-hidden="true" />
+              <span>{locale === "ja" ? "日本語" : "English"}</span>
+              <span />
+            </button>
+          ) : null}
         </div>
       ) : null}
     </header>

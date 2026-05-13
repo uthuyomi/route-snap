@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Bot, Camera, Check, ExternalLink, ImagePlus, Loader2, Navigation, RotateCcw, ScanText, XCircle } from "lucide-react";
+import { Camera, Check, ExternalLink, ImagePlus, Loader2, Navigation, RotateCcw, ScanText, XCircle } from "lucide-react";
 import Image from "next/image";
 import { ChangeEvent, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
@@ -27,7 +27,6 @@ const messages = {
     destination: "行き先",
     destinationPlaceholder: "AIで整形した住所が入ります",
     openMaps: "Google Mapsで開く",
-    autoOpen: "整形後に自動で開く",
     confidence: "信頼度",
     status: "状態",
     ready: "準備OK",
@@ -42,13 +41,12 @@ const messages = {
     retakeAria: "写真を撮り直す",
     resetAria: "入力内容をクリア",
     mapsAria: "Google Mapsで開く",
-    autoAria: "整形後にGoogle Mapsを自動で開く",
     capturePanel: "1. 撮影",
     confirmPanel: "2. 確認して開く",
     captureHelp: "住所部分が大きく写るように撮影してください。",
     noPhoto: "画像未選択",
     readyPhoto: "画像選択済み",
-    mapsHelp: "Mapsを開く前に住所を編集できます。",
+    mapsHelp: "Mapsを開く前に住所を確認・編集できます。読み取りが曖昧な時は建物名や郵便番号も残してください。",
     photoSource: "取り込み方法",
     resultTools: "読み取り操作"
   },
@@ -63,7 +61,6 @@ const messages = {
     destination: "Destination",
     destinationPlaceholder: "Formatted address appears here",
     openMaps: "Open in Google Maps",
-    autoOpen: "Auto open after formatting",
     confidence: "Confidence",
     status: "Status",
     ready: "Ready",
@@ -78,7 +75,6 @@ const messages = {
     retakeAria: "Retake photo",
     resetAria: "Clear input",
     mapsAria: "Open in Google Maps",
-    autoAria: "Open Google Maps after formatting",
     capturePanel: "1. Capture",
     confirmPanel: "2. Review and Open",
     captureHelp: "Frame the address clearly so the address text is larger than names or postal codes.",
@@ -110,7 +106,6 @@ export default function Home() {
   const [result, setResult] = useState<AddressResult | null>(null);
   const [manualAddress, setManualAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [autoOpenMaps, setAutoOpenMaps] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const t = messages[locale];
@@ -160,15 +155,16 @@ export default function Home() {
 
       const payload = await response.json();
       if (!response.ok) {
+        if (response.status === 401) {
+          window.location.assign("/login?next=/single");
+          return;
+        }
         throw new Error(payload.detail ?? t.parseFailed);
       }
 
       setResult(payload);
       setManualAddress(payload.normalized_address ?? "");
 
-      if (autoOpenMaps && payload.normalized_address) {
-        openMapsAddress(payload.normalized_address);
-      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : t.unknownError);
     } finally {
@@ -254,7 +250,7 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="app-panel grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto_auto_auto] gap-2 p-2 sm:p-3 md:sticky md:top-2 lg:top-4 lg:gap-4 lg:p-4" aria-label={t.destination}>
+          <section className="app-panel grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto_auto] gap-2 p-2 sm:p-3 md:sticky md:top-2 lg:top-4 lg:gap-4 lg:p-4" aria-label={t.destination}>
             <div>
               <p className="app-eyebrow">{t.confirmPanel}</p>
               <h2 className="app-heading mt-2">{t.destination}</h2>
@@ -281,20 +277,7 @@ export default function Home() {
               <span>{t.openMaps}</span>
             </button>
 
-            <div className="grid grid-cols-3 gap-2">
-              <label
-                className={[
-                  "grid min-h-14 cursor-pointer place-items-center gap-1 rounded-lg border px-2 text-center text-xs font-bold transition sm:min-h-16",
-                  autoOpenMaps ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_24px_rgba(6,78,59,0.20)]" : "border-neutral-200 bg-white/75 text-neutral-600"
-                ].join(" ")}
-                aria-label={t.autoAria}
-                title={t.autoAria}
-              >
-                <input className="sr-only" type="checkbox" checked={autoOpenMaps} onChange={(event) => setAutoOpenMaps(event.target.checked)} />
-                <Bot size={20} aria-hidden="true" />
-                <span>{t.autoOpen}</span>
-              </label>
-
+            <div className="grid grid-cols-2 gap-2">
               <div className="metric-card grid min-h-14 place-items-center gap-1 px-2 text-xs font-bold text-neutral-600 sm:min-h-16" title={t.confidence}>
                 <span className="text-sm tabular-nums text-neutral-950">{result ? `${Math.round(result.confidence * 100)}%` : "--"}</span>
                 <span>{t.confidence}</span>

@@ -305,6 +305,10 @@ export default function BatchRoutePage() {
       });
       const payload = (await response.json()) as AddressListResult & { detail?: string };
       if (!response.ok) {
+        if (response.status === 401) {
+          window.location.assign("/login?next=/batch");
+          return;
+        }
         throw new Error(payload.detail ?? t.imageFailed);
       }
       const addresses = (payload.addresses ?? []).filter((address) => address.normalized_address?.trim());
@@ -386,6 +390,23 @@ export default function BatchRoutePage() {
       ]);
       return;
     }
+
+    const usageResponse = await fetch("/api/usage/file-addresses", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ count: extractedStops.length })
+    });
+    const usagePayload = (await usageResponse.json()) as { detail?: string };
+    if (!usageResponse.ok) {
+      if (usageResponse.status === 401) {
+        window.location.assign("/login?next=/batch");
+        return;
+      }
+      throw new Error(usagePayload.detail ?? t.fileReadFailed);
+    }
+
     setStops((current) => [...current, ...extractedStops]);
   }
 
@@ -486,6 +507,10 @@ export default function BatchRoutePage() {
       });
       const payload = (await response.json()) as OptimizeResult & { detail?: string };
       if (!response.ok) {
+        if (response.status === 401) {
+          window.location.assign("/login?next=/batch");
+          return;
+        }
         throw new Error(payload.detail ?? t.aiRouteFailed);
       }
       setRouteMode("ai");
