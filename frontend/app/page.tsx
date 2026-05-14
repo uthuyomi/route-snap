@@ -2,125 +2,386 @@
 
 import {
   ArrowRight,
+  BriefcaseBusiness,
   Camera,
   Check,
+  Download,
+  ExternalLink,
   FileText,
+  Hammer,
+  HeartPulse,
+  HomeIcon,
   LocateFixed,
   MapPinned,
+  MonitorDown,
   Navigation,
+  Package,
   Route,
   ScanText,
+  Share2,
+  Smartphone,
   Sparkles,
-  Upload
+  Truck,
+  Wrench
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "./components/AppHeader";
 import { LegalFooter } from "./components/LegalFooter";
 import { usePreferredLocale } from "./lib/locale";
 
+type InstallStatus = "idle" | "ready" | "installed";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
 const messages = {
   ja: {
-    eyebrow: "配送・訪問ルートの住所入力を短く",
-    title: "紙も写真も、そのまま配達ルートへ。",
-    lead: "Route Snapは、住所が写った画像やファイルをAIで読み取り、現在地スタートのGoogle Mapsルートに整えるツールです。",
-    primary: "単発で試す",
-    secondary: "複数住所をまとめる",
-    trust1: "画像OCR",
-    trust2: "複数住所",
-    trust3: "現在地スタート",
+    topLine: "配送・訪問業務の移動時間を削減",
+    eyebrow: "配送・訪問・現場業務向け",
+    title: "紙の住所を、最短ルートへ。",
+    lead: "伝票・メモ・スクリーンショットから住所を抽出。Google Mapsへそのままルート連携できます。",
+    primary: "住所を読み取る",
+    secondary: "訪問ルートを作成",
+    installTitle: "アプリのように使えます",
+    installLead: "ホーム画面に追加すると、すぐ開けます。",
+    install: "ホーム画面に追加",
+    installed: "アプリを開く",
+    manual: "ホーム画面に追加",
+    installHow: "インストール方法を見る",
+    desktopHint: "インストール画面が自動で出ない場合は、Chrome / Edge のアドレスバー右側にあるインストールボタン、またはメニューの「アプリをインストール」から追加できます。",
+    desktopStep1: "Chrome / Edgeでこのページを開く",
+    desktopStep2: "アドレスバー右側のインストールボタンを押す",
+    desktopStep3: "表示された確認画面でインストールを選択",
+    share: "共有",
+    homeScreen: "ホーム画面",
+    trust1: "画像から読み取る",
+    trust2: "CSVを読み込む",
+    trust3: "現在地から開始",
     demoTitle: "今日の訪問先",
     demoAddress1: "東京都新宿区西新宿2-8-1",
     demoAddress2: "東京都渋谷区渋谷2-21-1",
     demoAddress3: "東京都港区芝公園4-2-8",
-    demoNote: "AI順路: 現在地から近い順に整理",
-    singleTitle: "1件なら撮ってすぐナビ",
-    singleText: "伝票やメモの住所を撮影して、読み取った住所を確認したらそのままGoogle Mapsへ送れます。",
-    batchTitle: "複数住所を一括取り込み",
-    batchText: "画像・TXT・CSV・JSONから複数の住所を取り込み、リストで確認しながらまとめてルート化できます。",
-    routeTitle: "現在地から順路を作成",
-    routeText: "AI最適化では端末の現在地を考慮し、備考欄の時間指定や優先度も見ながら順番を整えます。",
-    featureTitle: "現場で使いやすい機能",
-    feature1: "写真の住所を読み取り",
-    feature2: "ファイル内の順番でルート化",
-    feature3: "AIで移動順を整理",
-    feature4: "各住所に備考を追加",
-    feature5: "スマホでもPCでも操作しやすい",
-    feature6: "アプリとして端末に保存",
-    workflowTitle: "使い方は3ステップ",
-    step1: "画像や住所ファイルを追加",
-    step2: "読み取り結果を確認・修正",
-    step3: "現在地からGoogle Mapsで出発",
-    audienceTitle: "こんな人に",
-    audience1: "軽貨物・委託配送",
-    audience2: "訪問営業・点検",
-    audience3: "訪問介護・訪問看護",
-    audience4: "イベント・出張サービス"
+    demoMeta1: "読み取り完了 ・ 8分",
+    demoMeta2: "読み取り完了 ・ 12分",
+    demoMeta3: "読み取り完了 ・ 18分",
+    demoNote: "現在地から自動で並び替え",
+    flow1: "写真を追加",
+    flow2: "AIが住所を抽出",
+    flow3: "移動順を整理",
+    flow4: "Mapsへルート送信",
+    singleTitle: "撮った住所をすぐ確認",
+    singleText: "伝票やメモを撮影。住所だけを抜き出して、その場で修正できます。",
+    batchTitle: "訪問先をまとめて整理",
+    batchText: "CSVや画像から複数住所を取り込み、移動しやすい順に並べます。",
+    routeTitle: "Google Mapsへ即連携",
+    routeText: "現在地を出発地点にして、確認済みの住所をそのままルート化します。",
+    compareTitle: "住所読み取りとルート作成の違い",
+    compareLead: "1件をすぐ地図で開くなら住所読み取り。複数件を回るならルート作成です。",
+    compareSingleTitle: "住所読み取り",
+    compareSingleTag: "1件向け",
+    compareSingleText: "写真から住所を抜き出し、確認してGoogle Mapsで開きます。",
+    compareSingleUse1: "伝票1枚をすぐナビしたい",
+    compareSingleUse2: "メモの住所を手入力せず確認したい",
+    compareSingleUse3: "読み取り結果をその場で修正したい",
+    compareBatchTitle: "ルート作成",
+    compareBatchTag: "複数件向け",
+    compareBatchText: "複数の訪問先をまとめ、移動しやすい順に整理します。",
+    compareBatchUse1: "今日の訪問先をまとめて回りたい",
+    compareBatchUse2: "CSVや画像から複数住所を取り込みたい",
+    compareBatchUse3: "現在地から効率よく回る順番を作りたい",
+    featureTitle: "できること",
+    feature1Title: "手入力を減らす",
+    feature1Text: "紙の住所を手入力不要に",
+    feature2Title: "訪問先をまとめる",
+    feature2Text: "大量の訪問先を一括整理",
+    feature3Title: "すぐナビする",
+    feature3Text: "そのままGoogle Mapsで開始",
+    feature4Title: "順番を整える",
+    feature4Text: "移動しやすい訪問順へ",
+    feature5Title: "現在地から出る",
+    feature5Text: "出発地点を自動で設定",
+    feature6Title: "端末を選ばない",
+    feature6Text: "スマホ・PCの両方で運用",
+    workflowTitle: "使い方",
+    step1: "住所画像を追加",
+    step2: "読み取り結果を確認",
+    step3: "Google Mapsでルート開始",
+    audienceTitle: "こんな現場に",
+    audience1: "軽貨物・配送",
+    audience2: "営業訪問",
+    audience3: "訪問介護",
+    audience4: "点検・保守",
+    audience5: "現場作業",
+    audience6: "出張サービス"
   },
   en: {
-    eyebrow: "Faster address entry for delivery and field visits",
-    title: "Turn paper, photos, and files into routes.",
-    lead: "Route Snap reads address images and files with AI, then prepares Google Maps routes that start from your current location.",
-    primary: "Try Single",
-    secondary: "Import Batch",
-    trust1: "Image OCR",
-    trust2: "Batch import",
-    trust3: "Current location",
-    demoTitle: "Today’s stops",
+    topLine: "Reduce travel time for delivery and field visits",
+    eyebrow: "For delivery, visits, and field operations",
+    title: "Turn paper addresses into the shortest route.",
+    lead: "Extract addresses from slips, notes, and screenshots. Send them straight to Google Maps routes.",
+    primary: "Read addresses",
+    secondary: "Create visit route",
+    installTitle: "Use it like an app",
+    installLead: "Add it to your home screen and open it fast.",
+    install: "Add to home screen",
+    installed: "Open app",
+    manual: "Add to home screen",
+    installHow: "Show install steps",
+    desktopHint: "If the install dialog does not open automatically, use the install button in the Chrome / Edge address bar, or the browser menu's install app action.",
+    desktopStep1: "Open this page in Chrome / Edge",
+    desktopStep2: "Click the install button in the address bar",
+    desktopStep3: "Choose Install in the confirmation dialog",
+    share: "Share",
+    homeScreen: "Home Screen",
+    trust1: "Read from images",
+    trust2: "Import CSV",
+    trust3: "Start from current location",
+    demoTitle: "Today's visits",
     demoAddress1: "Shinjuku, Tokyo",
     demoAddress2: "Shibuya, Tokyo",
     demoAddress3: "Shiba Park, Tokyo",
-    demoNote: "AI route: ordered from your current location",
-    singleTitle: "One address, straight to navigation",
-    singleText: "Capture a label or memo, check the extracted address, and send it directly to Google Maps.",
-    batchTitle: "Import many addresses at once",
-    batchText: "Read addresses from images, TXT, CSV, or JSON files, then review and route them together.",
-    routeTitle: "Plan from your current location",
-    routeText: "AI route ordering can consider your current location plus time windows, priorities, and notes.",
-    featureTitle: "Built for field work",
-    feature1: "Read addresses from photos",
-    feature2: "Route in file order",
-    feature3: "Optimize travel order with AI",
-    feature4: "Add notes per stop",
-    feature5: "Comfortable on mobile and desktop",
-    feature6: "Save as an app on your device",
-    workflowTitle: "Three simple steps",
-    step1: "Add images or address files",
-    step2: "Review and correct results",
-    step3: "Open Google Maps from your location",
-    audienceTitle: "Made for",
+    demoMeta1: "Read complete - 8 min",
+    demoMeta2: "Read complete - 12 min",
+    demoMeta3: "Read complete - 18 min",
+    demoNote: "Reordered from your current location",
+    flow1: "Add photo",
+    flow2: "AI extracts address",
+    flow3: "Sort visit order",
+    flow4: "Send route to Maps",
+    singleTitle: "Check captured addresses",
+    singleText: "Take a photo of a slip or memo. Extract the address and edit it on the spot.",
+    batchTitle: "Organize visit lists",
+    batchText: "Import many stops from CSV or images, then sort them into a practical route.",
+    routeTitle: "Open Google Maps fast",
+    routeText: "Use your current location as the start and route confirmed addresses immediately.",
+    compareTitle: "Address Reader vs Route Planner",
+    compareLead: "Use Address Reader for one destination. Use Route Planner when you have multiple stops.",
+    compareSingleTitle: "Address Reader",
+    compareSingleTag: "For one stop",
+    compareSingleText: "Extract one address from a photo, review it, and open it in Google Maps.",
+    compareSingleUse1: "Navigate from one slip right away",
+    compareSingleUse2: "Avoid typing an address from a note",
+    compareSingleUse3: "Fix the extracted result on the spot",
+    compareBatchTitle: "Route Planner",
+    compareBatchTag: "For multiple stops",
+    compareBatchText: "Collect many destinations and sort them into a practical visit order.",
+    compareBatchUse1: "Visit today's stops efficiently",
+    compareBatchUse2: "Import multiple addresses from CSV or images",
+    compareBatchUse3: "Create an order from your current location",
+    featureTitle: "What it handles",
+    feature1Title: "Reduce typing",
+    feature1Text: "No manual entry for paper addresses",
+    feature2Title: "Group visits",
+    feature2Text: "Organize large stop lists at once",
+    feature3Title: "Navigate fast",
+    feature3Text: "Start directly in Google Maps",
+    feature4Title: "Sort order",
+    feature4Text: "Arrange stops for easier travel",
+    feature5Title: "Start here",
+    feature5Text: "Use current location automatically",
+    feature6Title: "Use any device",
+    feature6Text: "Works on mobile and desktop",
+    workflowTitle: "Workflow",
+    step1: "Add address images",
+    step2: "Review extracted results",
+    step3: "Start route in Google Maps",
+    audienceTitle: "Built for",
     audience1: "Local delivery",
-    audience2: "Sales and inspections",
-    audience3: "Home care visits",
-    audience4: "On-site services"
+    audience2: "Sales visits",
+    audience3: "Home care",
+    audience4: "Inspection and maintenance",
+    audience5: "Field work",
+    audience6: "On-site services"
   }
 } satisfies Record<AppLocale, Record<string, string>>;
+
+function isStandaloneDisplay() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+}
+
+function isAppleTouchDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+}
+
+function surfaceCardClass(extra = "") {
+  return `rounded-lg border border-neutral-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${extra}`;
+}
+
+function InstallPanel({ locale }: { locale: AppLocale }) {
+  const t = messages[locale];
+  const installPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const [installStatus, setInstallStatus] = useState<InstallStatus>(() => (isStandaloneDisplay() ? "installed" : "idle"));
+  const [isAppleDevice] = useState(() => isAppleTouchDevice());
+  const [showInstallHelp, setShowInstallHelp] = useState(false);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+
+    function onBeforeInstallPrompt(event: Event) {
+      event.preventDefault();
+      installPromptRef.current = event as BeforeInstallPromptEvent;
+      setInstallStatus("ready");
+    }
+
+    function onAppInstalled() {
+      installPromptRef.current = null;
+      setInstallStatus("installed");
+    }
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, []);
+
+  async function installApp() {
+    if (installStatus === "installed") {
+      window.location.assign("/");
+      return;
+    }
+
+    if (installPromptRef.current) {
+      const prompt = installPromptRef.current;
+      installPromptRef.current = null;
+      await prompt.prompt();
+      const choice = await prompt.userChoice;
+      setInstallStatus(choice.outcome === "accepted" ? "installed" : "idle");
+      return;
+    }
+
+    if (!isAppleDevice) {
+      setInstallStatus(isStandaloneDisplay() ? "installed" : "idle");
+      setShowInstallHelp(true);
+    }
+  }
+
+  const label = installStatus === "installed" ? t.installed : isAppleDevice ? t.manual : t.install;
+  const canAct = installStatus === "ready" || installStatus === "installed";
+
+  return (
+    <div className={surfaceCardClass("grid gap-3 bg-white/90 p-4")}>
+      <div className="flex items-start gap-3">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-emerald-900 text-white">
+          {isAppleDevice ? <Smartphone size={20} aria-hidden="true" /> : <MonitorDown size={20} aria-hidden="true" />}
+        </span>
+        <div>
+          <h2 className="m-0 text-base font-black text-neutral-950">{t.installTitle}</h2>
+          <p className="m-0 mt-1 text-sm font-semibold leading-5 text-neutral-600">{t.installLead}</p>
+        </div>
+      </div>
+      <button
+        className={[
+          "inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black transition active:scale-[0.98]",
+          canAct ? "bg-emerald-900 text-white hover:bg-emerald-800" : "bg-white text-neutral-950 ring-1 ring-neutral-300 hover:bg-neutral-50"
+        ].join(" ")}
+        type="button"
+        onClick={installApp}
+      >
+        <span>{label}</span>
+        {installStatus === "installed" ? <ExternalLink size={17} aria-hidden="true" /> : <Download size={17} aria-hidden="true" />}
+      </button>
+      {showInstallHelp && !canAct && !isAppleDevice ? (
+        <details className="rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs font-semibold leading-5 text-neutral-600">
+          <summary className="cursor-pointer font-black text-neutral-800">{t.installHow}</summary>
+          <p className="m-0 mt-2">{t.desktopHint}</p>
+          <ol className="m-0 mt-2 grid list-decimal gap-1 pl-4">
+            <li>{t.desktopStep1}</li>
+            <li>{t.desktopStep2}</li>
+            <li>{t.desktopStep3}</li>
+          </ol>
+        </details>
+      ) : null}
+      {isAppleDevice && installStatus !== "installed" ? (
+        <div className="grid grid-cols-2 gap-2 text-xs font-black text-neutral-700">
+          <div className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50">
+            <Share2 size={16} aria-hidden="true" />
+            <span>{t.share}</span>
+          </div>
+          <div className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50">
+            <HomeIcon size={16} aria-hidden="true" />
+            <span>{t.homeScreen}</span>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export default function Home() {
   const [locale, setLocale] = usePreferredLocale();
   const t = messages[locale];
 
-  const features = [
-    { icon: Camera, text: t.feature1 },
-    { icon: FileText, text: t.feature2 },
-    { icon: Sparkles, text: t.feature3 },
-    { icon: Check, text: t.feature4 },
-    { icon: LocateFixed, text: t.feature5 },
-    { icon: Upload, text: t.feature6 }
+  const flow = [
+    { icon: Camera, text: t.flow1 },
+    { icon: ScanText, text: t.flow2 },
+    { icon: Sparkles, text: t.flow3 },
+    { icon: Navigation, text: t.flow4 }
   ];
 
-  const audiences = [t.audience1, t.audience2, t.audience3, t.audience4];
+  const visits = [
+    { address: t.demoAddress1, meta: t.demoMeta1 },
+    { address: t.demoAddress2, meta: t.demoMeta2 },
+    { address: t.demoAddress3, meta: t.demoMeta3 }
+  ];
+
+  const compareCards = [
+    {
+      href: "/single",
+      icon: ScanText,
+      title: t.compareSingleTitle,
+      tag: t.compareSingleTag,
+      text: t.compareSingleText,
+      items: [t.compareSingleUse1, t.compareSingleUse2, t.compareSingleUse3]
+    },
+    {
+      href: "/batch",
+      icon: Route,
+      title: t.compareBatchTitle,
+      tag: t.compareBatchTag,
+      text: t.compareBatchText,
+      items: [t.compareBatchUse1, t.compareBatchUse2, t.compareBatchUse3]
+    }
+  ];
+
+  const features = [
+    { icon: Camera, title: t.feature1Title, text: t.feature1Text },
+    { icon: FileText, title: t.feature2Title, text: t.feature2Text },
+    { icon: Navigation, title: t.feature3Title, text: t.feature3Text },
+    { icon: Sparkles, title: t.feature4Title, text: t.feature4Text },
+    { icon: LocateFixed, title: t.feature5Title, text: t.feature5Text },
+    { icon: MonitorDown, title: t.feature6Title, text: t.feature6Text }
+  ];
+
+  const audiences = [
+    { icon: Package, text: t.audience1 },
+    { icon: BriefcaseBusiness, text: t.audience2 },
+    { icon: HeartPulse, text: t.audience3 },
+    { icon: Wrench, text: t.audience4 },
+    { icon: Hammer, text: t.audience5 },
+    { icon: Truck, text: t.audience6 }
+  ];
 
   return (
-    <main className="min-h-svh bg-[#f7f4ed] px-4 py-4 text-neutral-950 sm:px-6 lg:py-8">
-      <div className="mx-auto grid w-full max-w-6xl gap-7">
+    <main className="min-h-svh bg-[#f4f1e9] px-4 py-4 text-neutral-950 sm:px-6 lg:py-8">
+      <div className="mx-auto grid w-full max-w-6xl gap-6">
         <AppHeader locale={locale} currentPage="home" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
 
-        <section className="overflow-hidden rounded-lg bg-[#fffdf7]">
-          <div className="grid gap-6 p-5 md:p-8 lg:grid-cols-[1.03fr_0.97fr] lg:items-center">
-            <div className="grid gap-6">
-              <div className="grid gap-4">
-                <div className="inline-flex w-fit rotate-[-1deg] items-center gap-2 rounded-lg bg-[#dff3c7] px-3 py-2 text-xs font-black text-[#31551f] shadow-sm">
+        <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white shadow-sm">
+          <div className="grid gap-6 p-5 md:p-7 lg:grid-cols-[1fr_0.95fr] lg:items-center">
+            <div className="grid gap-5">
+              <div className="grid gap-3">
+                <p className="m-0 text-sm font-black text-emerald-900">{t.topLine}</p>
+                <div className="inline-flex w-fit items-center gap-2 rounded-lg bg-emerald-900 px-3 py-2 text-xs font-black text-white shadow-sm">
                   <MapPinned size={15} aria-hidden="true" />
                   {t.eyebrow}
                 </div>
@@ -128,105 +389,161 @@ export default function Home() {
                 <p className="m-0 max-w-2xl text-base font-semibold leading-7 text-neutral-600 sm:text-lg">{t.lead}</p>
               </div>
 
-              <div className="flex flex-wrap gap-2">
-                <Link className="inline-flex h-14 items-center justify-center gap-2 rounded-lg bg-neutral-950 px-5 text-sm font-black text-white shadow-sm transition hover:bg-neutral-800 active:scale-[0.98]" href="/single">
-                  <ScanText size={20} aria-hidden="true" />
+              <div className="flex flex-wrap gap-3">
+                <Link className="inline-flex min-h-16 items-center justify-center gap-2.5 rounded-lg bg-emerald-900 px-6 text-base font-black text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-md active:scale-[0.98]" href="/single">
+                  <ScanText size={22} aria-hidden="true" />
                   <span>{t.primary}</span>
                 </Link>
-                <Link className="inline-flex h-14 items-center justify-center gap-2 rounded-lg border border-neutral-300 bg-white px-5 text-sm font-black text-neutral-900 shadow-sm transition hover:border-neutral-500 hover:bg-neutral-50 active:scale-[0.98]" href="/batch">
-                  <Route size={20} aria-hidden="true" />
+                <Link className="inline-flex min-h-16 items-center justify-center gap-2.5 rounded-lg border border-neutral-300 bg-white px-6 text-base font-black text-neutral-950 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-700 hover:bg-emerald-50 hover:shadow-md active:scale-[0.98]" href="/batch">
+                  <Route size={22} aria-hidden="true" />
                   <span>{t.secondary}</span>
-                  <ArrowRight size={18} aria-hidden="true" />
+                  <ArrowRight size={19} aria-hidden="true" />
                 </Link>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 {[t.trust1, t.trust2, t.trust3].map((item) => (
-                  <div key={item} className="rounded-lg bg-white px-3 py-3 text-center text-xs font-black text-neutral-700 shadow-sm">
+                  <div key={item} className="grid min-h-14 place-items-center rounded-lg border border-neutral-200 bg-[#fbfaf6] px-2 py-2 text-center text-xs font-black leading-4 text-neutral-800 shadow-sm">
                     {item}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-2 rounded-lg border border-neutral-200 bg-[#fbfaf6] p-3 shadow-sm sm:grid-cols-4">
+                {flow.map((item, index) => (
+                  <div key={item.text} className="relative grid min-h-24 place-items-center gap-2 rounded-lg bg-white p-3 text-center shadow-sm">
+                    <span className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-50 text-emerald-900">
+                      <item.icon size={20} aria-hidden="true" />
+                    </span>
+                    <span className="text-sm font-black leading-5 text-neutral-800">{item.text}</span>
+                    <span className="absolute left-2 top-2 text-[10px] font-black tabular-nums text-neutral-400">0{index + 1}</span>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="grid rotate-[1deg] gap-3 rounded-lg bg-[#e8f4ff] p-3 shadow-sm">
-              <div className="flex items-center justify-between gap-3 rounded-lg bg-white p-3 shadow-sm">
-                <div className="flex items-center gap-3">
-                  <Image className="h-12 w-12 rounded-lg object-cover" src="/image/icon/route-snap.png" alt="Route Snap" width={48} height={48} priority />
-                  <div>
-                    <p className="m-0 text-sm font-black text-neutral-950">{t.demoTitle}</p>
-                    <p className="m-0 text-xs font-bold text-neutral-500">{t.demoNote}</p>
+            <div className="grid gap-3">
+              <div className="grid gap-3 rounded-lg bg-[#dceee4] p-3 shadow-sm">
+                <div className="flex items-center justify-between gap-3 rounded-lg bg-white p-3 shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <Image className="h-12 w-12 rounded-lg object-cover" src="/image/icon/route-snap.png" alt="Route Snap" width={48} height={48} priority />
+                    <div>
+                      <p className="m-0 text-sm font-black text-neutral-950">{t.demoTitle}</p>
+                      <p className="m-0 text-xs font-bold text-neutral-500">{t.demoNote}</p>
+                    </div>
                   </div>
+                  <Navigation className="text-emerald-800" size={22} aria-hidden="true" />
                 </div>
-                <Navigation className="text-emerald-700" size={22} aria-hidden="true" />
-              </div>
 
-              {[t.demoAddress1, t.demoAddress2, t.demoAddress3].map((address, index) => (
-                <div key={address} className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 rounded-lg bg-white p-3 shadow-sm">
-                  <span className="grid h-10 w-10 place-items-center rounded-lg bg-neutral-950 text-sm font-black text-white">{index + 1}</span>
-                  <span className="truncate text-sm font-black text-neutral-900">{address}</span>
-                  <Check className="text-emerald-700" size={18} aria-hidden="true" />
-                </div>
-              ))}
+                {visits.map((visit, index) => (
+                  <div key={visit.address} className="grid grid-cols-[2.25rem_1fr_auto] items-center gap-3 rounded-lg bg-white p-3 shadow-sm">
+                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-900 text-sm font-black text-white">{index + 1}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-black text-neutral-900">{visit.address}</span>
+                      <span className="mt-0.5 block truncate text-xs font-bold text-neutral-500">{visit.meta}</span>
+                    </span>
+                    <Check className="text-emerald-700" size={18} aria-hidden="true" />
+                  </div>
+                ))}
 
-              <div className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg bg-neutral-950 p-3 text-white">
-                <span className="text-sm font-black">{t.secondary}</span>
-                <ArrowRight size={18} aria-hidden="true" />
+                <Link className="grid grid-cols-[1fr_auto] items-center gap-3 rounded-lg bg-emerald-900 p-3 text-white transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-md" href="/batch">
+                  <span className="text-sm font-black">{t.secondary}</span>
+                  <ArrowRight size={18} aria-hidden="true" />
+                </Link>
               </div>
+              <InstallPanel locale={locale} />
             </div>
+          </div>
+        </section>
+
+        <section className="grid gap-4 rounded-lg bg-white p-5 shadow-sm ring-1 ring-neutral-200">
+          <div className="grid gap-2">
+            <h2 className="m-0 text-2xl font-black">{t.compareTitle}</h2>
+            <p className="m-0 text-sm font-semibold leading-6 text-neutral-600">{t.compareLead}</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {compareCards.map((card) => (
+              <Link key={card.title} href={card.href} className="grid gap-4 rounded-lg border border-neutral-200 bg-[#fbfaf6] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-700 hover:bg-emerald-50 hover:shadow-md">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-11 w-11 place-items-center rounded-lg bg-emerald-900 text-white">
+                      <card.icon size={21} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h3 className="m-0 text-lg font-black leading-6">{card.title}</h3>
+                      <p className="m-0 mt-1 text-sm font-semibold leading-5 text-neutral-600">{card.text}</p>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-white px-2 py-1 text-xs font-black text-emerald-900 ring-1 ring-emerald-200">{card.tag}</span>
+                </div>
+                <ul className="m-0 grid list-none gap-2 p-0">
+                  {card.items.map((item) => (
+                    <li key={item} className="grid grid-cols-[1.5rem_1fr] items-start gap-2 text-sm font-bold leading-5 text-neutral-700">
+                      <Check className="mt-0.5 text-emerald-700" size={17} aria-hidden="true" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Link>
+            ))}
           </div>
         </section>
 
         <section className="grid gap-3 md:grid-cols-3">
           {[
             { icon: ScanText, title: t.singleTitle, text: t.singleText },
-            { icon: FileText, title: t.batchTitle, text: t.batchText },
-            { icon: LocateFixed, title: t.routeTitle, text: t.routeText }
+            { icon: Route, title: t.batchTitle, text: t.batchText },
+            { icon: Navigation, title: t.routeTitle, text: t.routeText }
           ].map((item) => (
-            <article key={item.title} className="grid gap-3 rounded-lg bg-white p-5 shadow-sm">
-              <span className="grid h-11 w-11 place-items-center rounded-lg bg-[#ffe08a] text-neutral-950">
+            <article key={item.title} className={surfaceCardClass("grid min-h-44 grid-rows-[auto_1fr] gap-3")}>
+              <span className="grid h-11 w-11 place-items-center rounded-lg bg-emerald-900 text-white">
                 <item.icon size={21} aria-hidden="true" />
               </span>
               <div>
-                <h2 className="m-0 text-lg font-black">{item.title}</h2>
-                <p className="m-0 mt-2 text-sm font-semibold leading-6 text-neutral-600">{item.text}</p>
+                <h2 className="m-0 text-lg font-black leading-6">{item.title}</h2>
+                <p className="m-0 mt-2 text-sm font-semibold leading-5 text-neutral-600">{item.text}</p>
               </div>
             </article>
           ))}
         </section>
 
-        <section className="grid gap-4 rounded-lg bg-[#eff7e8] p-5">
+        <section className="grid gap-4 rounded-lg bg-[#eaf4ed] p-5">
           <h2 className="m-0 text-2xl font-black">{t.featureTitle}</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => (
-              <div key={feature.text} className="grid grid-cols-[2.5rem_1fr] items-center gap-3 rounded-lg bg-white p-3 shadow-sm">
-                <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#f7f4ed] text-neutral-800">
-                  <feature.icon size={19} aria-hidden="true" />
+              <div key={feature.title} className="grid min-h-24 grid-cols-[2.75rem_1fr] items-center gap-3 rounded-lg border border-neutral-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <span className="grid h-11 w-11 place-items-center rounded-lg bg-[#f5f2ea] text-emerald-900">
+                  <feature.icon size={21} aria-hidden="true" />
                 </span>
-                <p className="m-0 text-sm font-black text-neutral-800">{feature.text}</p>
+                <div>
+                  <h3 className="m-0 text-sm font-black leading-5 text-neutral-950">{feature.title}</h3>
+                  <p className="m-0 mt-1 text-sm font-semibold leading-5 text-neutral-600">{feature.text}</p>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-[0.95fr_1.05fr]">
-          <div className="grid gap-3 rounded-lg bg-white p-5 shadow-sm">
+          <div className={surfaceCardClass("grid gap-3")}>
             <h2 className="m-0 text-2xl font-black">{t.workflowTitle}</h2>
             {[t.step1, t.step2, t.step3].map((step, index) => (
-              <div key={step} className="grid grid-cols-[2.25rem_1fr] items-start gap-3 rounded-lg bg-[#f7f4ed] p-3">
-                <span className="grid h-9 w-9 place-items-center rounded-lg bg-neutral-950 text-sm font-black text-white">{index + 1}</span>
-                <p className="m-0 text-sm font-semibold leading-6 text-neutral-700">{step}</p>
+              <div key={step} className="grid grid-cols-[2.25rem_1fr] items-center gap-3 rounded-lg bg-[#f5f2ea] p-3">
+                <span className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-900 text-sm font-black text-white">{index + 1}</span>
+                <p className="m-0 text-sm font-black leading-5 text-neutral-800">{step}</p>
               </div>
             ))}
           </div>
 
           <div className="grid gap-3 rounded-lg bg-[#fff3c4] p-5 shadow-sm">
             <h2 className="m-0 text-2xl font-black">{t.audienceTitle}</h2>
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {audiences.map((audience) => (
-                <div key={audience} className="flex min-h-14 items-center gap-3 rounded-lg bg-white px-3 text-sm font-black text-neutral-800 shadow-sm">
-                  <Check className="shrink-0 text-emerald-700" size={18} aria-hidden="true" />
-                  <span>{audience}</span>
+                <div key={audience.text} className="flex min-h-12 items-center gap-3 rounded-lg border border-neutral-200 bg-white px-3 text-sm font-black text-neutral-800 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-emerald-50 text-emerald-900">
+                    <audience.icon size={18} aria-hidden="true" />
+                  </span>
+                  <span>{audience.text}</span>
                 </div>
               ))}
             </div>

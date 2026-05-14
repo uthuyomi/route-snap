@@ -17,7 +17,7 @@ type AddressResult = {
 
 const messages = {
   ja: {
-    capture: "住所を読み取る",
+    capture: "住所読み取り",
     chooseImage: "画像を選択",
     takePhoto: "撮影する",
     analyze: "住所を整形",
@@ -41,7 +41,7 @@ const messages = {
     retakeAria: "写真を撮り直す",
     resetAria: "入力内容をクリア",
     mapsAria: "Google Mapsで開く",
-    capturePanel: "1. 撮影",
+    capturePanel: "1. 画像を追加",
     confirmPanel: "2. 確認して開く",
     captureHelp: "住所部分が大きく写るように撮影してください。",
     noPhoto: "画像未選択",

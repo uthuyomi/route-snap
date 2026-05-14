@@ -25,4 +25,3 @@ export function LegalFooter({ locale }: { locale: AppLocale }) {
     </footer>
   );
 }
-
