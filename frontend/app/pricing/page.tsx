@@ -13,12 +13,10 @@ const messages = {
     eyebrow: "料金プラン",
     title: "必要な分だけ使える、現場向け料金プラン",
     lead: "画像読み取り・CSV取り込み・ルート整理を、利用量に合わせて使える料金プランです。小規模な訪問業務から、配送・チーム運用まで対応します。",
-    monthly: "月額",
-    tax: "税込想定",
+    tax: "税込予定",
     addressRead: "住所読み取り",
-    visitImport: "訪問先インポート",
+    visitImport: "訪問先一括登録",
     routeSort: "ルート整理",
-    overage: "超過",
     choose: "このプランを使う",
     chooseFree: "無料で試す",
     popular: "最も選ばれています",
@@ -40,14 +38,14 @@ const messages = {
     businessUsage: "複数人・複数案件向け",
     yen: "円",
     month: "月",
-    imagesUnit: "回/月",
+    readsUnit: "回/月",
     stopsUnit: "件/月",
-    routesUnit: "回/月",
-    ocrOverage: "住所読み取り 10〜15円/回",
-    stopsOverage: "訪問先インポート 1,000件ごとに100〜300円",
+    sortsUnit: "回/月",
+    addressOverage: "住所読み取り 10〜15円/回",
+    stopsOverage: "訪問先一括登録 1,000件ごとに100〜300円",
     routesOverage: "ルート整理 100回ごとに100〜300円",
     modelNoteTitle: "通常業務を想定した設計",
-    modelNote: "配送・訪問業務で使いやすいよう、住所読み取り・ルート整理・CSV取り込みを業務量ベースで管理します。",
+    modelNote: "配送・訪問業務で使いやすいよう、住所読み取り・ルート整理・訪問先一括登録を業務量ベースで管理します。",
     includedTitle: "全プラン共通",
     included1: "写真から住所を読み取り",
     included2: "複数画像の一括読み取り",
@@ -55,13 +53,13 @@ const messages = {
     included4: "訪問メモ・時間管理",
     included5: "現在地からルート整理",
     ctaTitle: "まずは無料で読み取りを試せます",
-    ctaText: "住所画像を追加するだけで、読み取り精度を確認できます。現場の伝票やメモで試してから、必要なプランを選べます。",
+    ctaText: "まずは無料プランで住所読み取りを試せます。現場の伝票・メモで確認してから、必要なプランを選べます。",
     ctaPrimary: "1件だけ試す",
     ctaSecondary: "複数訪問を整理する",
     compareTitle: "利用量について",
-    compareImage: "写真から住所を読み取った回数です。",
-    compareFile: "CSV・TXTファイルから訪問先を追加した件数です。",
-    compareRoute: "訪問順をAIで整理した回数です。",
+    compareImage: "画像やファイルから住所を読み取る回数です。",
+    compareFile: "CSV/TXTなどから複数の訪問先を追加する件数です。",
+    compareRoute: "複数の訪問先を移動しやすい順に整理する回数です。",
     trust1: "Google Maps連携対応",
     trust2: "スマホ・PC対応",
     trust3: "インストール不要",
@@ -70,13 +68,11 @@ const messages = {
   en: {
     eyebrow: "Pricing",
     title: "Field pricing that scales with your workload",
-    lead: "Use address reading, CSV import, and route organization based on volume. Built for small visit workflows through delivery and team operations.",
-    monthly: "Monthly",
+    lead: "Use address reading, bulk visit registration, and route organization based on volume. Built for small visit workflows through delivery and team operations.",
     tax: "estimated tax included",
     addressRead: "Address reading",
-    visitImport: "Visit imports",
+    visitImport: "Bulk visit registration",
     routeSort: "Route sorting",
-    overage: "Overage",
     choose: "Use this plan",
     chooseFree: "Try for free",
     popular: "Most selected",
@@ -98,14 +94,14 @@ const messages = {
     businessUsage: "For multiple users or projects",
     yen: "JPY",
     month: "mo",
-    imagesUnit: "reads/mo",
+    readsUnit: "reads/mo",
     stopsUnit: "stops/mo",
-    routesUnit: "sorts/mo",
-    ocrOverage: "Address reading 10-15 JPY/read",
-    stopsOverage: "Visit imports 100-300 JPY per 1,000",
+    sortsUnit: "sorts/mo",
+    addressOverage: "Address reading 10-15 JPY/read",
+    stopsOverage: "Bulk visit registration 100-300 JPY per 1,000",
     routesOverage: "Route sorting 100-300 JPY per 100",
     modelNoteTitle: "Designed for real field work",
-    modelNote: "Address reading, route sorting, and CSV import are managed by operational volume so delivery and visit workflows stay predictable.",
+    modelNote: "Address reading, route sorting, and bulk visit registration are managed by operational volume so delivery and visit workflows stay predictable.",
     includedTitle: "Included in every plan",
     included1: "Read addresses from photos",
     included2: "Batch read multiple images",
@@ -113,13 +109,13 @@ const messages = {
     included4: "Visit notes and time windows",
     included5: "Route sorting from current location",
     ctaTitle: "Try address reading for free",
-    ctaText: "Add an address image and check recognition quality with your actual slips or notes before choosing a plan.",
+    ctaText: "Start with the free plan and check recognition quality with your actual slips or notes before choosing a plan.",
     ctaPrimary: "Try one stop",
     ctaSecondary: "Organize multiple visits",
     compareTitle: "How usage is counted",
-    compareImage: "Counts each time an address is read from a photo.",
+    compareImage: "Counts each time an address is read from an image or file.",
     compareFile: "Counts each stop added from CSV or TXT files.",
-    compareRoute: "Counts each AI visit-order sorting request.",
+    compareRoute: "Counts each time multiple stops are sorted into an easier visit order.",
     trust1: "Google Maps integration",
     trust2: "Mobile and desktop",
     trust3: "No install required",
@@ -241,7 +237,7 @@ export default function PricingPage() {
               <div className="grid gap-2">
                 <div className="metric-card">
                   <p className="m-0 text-xs font-black text-neutral-500">{t.addressRead}</p>
-                  <p className="m-0 mt-1 text-lg font-black text-neutral-950">{formatNumber(plan.imageOcr, locale)} {t.imagesUnit}</p>
+                  <p className="m-0 mt-1 text-lg font-black text-neutral-950">{formatNumber(plan.imageOcr, locale)} {t.readsUnit}</p>
                 </div>
                 <div className="metric-card">
                   <p className="m-0 text-xs font-black text-neutral-500">{t.visitImport}</p>
@@ -249,7 +245,7 @@ export default function PricingPage() {
                 </div>
                 <div className="metric-card">
                   <p className="m-0 text-xs font-black text-neutral-500">{t.routeSort}</p>
-                  <p className="m-0 mt-1 text-lg font-black text-neutral-950">{formatNumber(plan.routeRuns, locale)} {t.routesUnit}</p>
+                  <p className="m-0 mt-1 text-lg font-black text-neutral-950">{formatNumber(plan.routeRuns, locale)} {t.sortsUnit}</p>
                 </div>
               </div>
 
@@ -301,7 +297,7 @@ export default function PricingPage() {
               ))}
             </div>
             <div className="grid gap-2 rounded-lg bg-white/80 p-3 text-sm font-bold text-neutral-700">
-              <p className="m-0">{t.ocrOverage}</p>
+              <p className="m-0">{t.addressOverage}</p>
               <p className="m-0">{t.stopsOverage}</p>
               <p className="m-0">{t.routesOverage}</p>
             </div>

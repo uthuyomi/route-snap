@@ -7,6 +7,14 @@ import { AccountActions } from "./AccountActions";
 
 export const dynamic = "force-dynamic";
 
+const planNames: Record<PlanId, string> = {
+  free: "無料",
+  light: "ライト",
+  standard: "標準",
+  pro: "プロ",
+  business: "業務"
+};
+
 function currentPeriodKey(date = new Date()) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
@@ -35,12 +43,12 @@ export default async function AccountPage() {
       ])
     : [{ data: null }, { data: null }];
 
-  const planId = (subscription?.plan_id as PlanId | undefined) && subscription?.status === "active" ? (subscription.plan_id as PlanId) : "free";
-  const plan = PLANS[planId] ?? PLANS.free;
+  const activePlanId = (subscription?.plan_id as PlanId | undefined) && subscription?.status === "active" ? (subscription.plan_id as PlanId) : "free";
+  const plan = PLANS[activePlanId] ?? PLANS.free;
   const meters = [
-    { label: "画像OCR", used: usage?.image_ocr_used ?? 0, limit: plan.imageOcr },
-    { label: "ファイル住所登録", used: usage?.file_stops_used ?? 0, limit: plan.fileStops },
-    { label: "ルート最適化", used: usage?.route_runs_used ?? 0, limit: plan.routeRuns }
+    { label: "住所読み取り", used: usage?.image_ocr_used ?? 0, limit: plan.imageOcr },
+    { label: "訪問先インポート", used: usage?.file_stops_used ?? 0, limit: plan.fileStops },
+    { label: "ルート整理", used: usage?.route_runs_used ?? 0, limit: plan.routeRuns }
   ];
 
   return (
@@ -54,10 +62,10 @@ export default async function AccountPage() {
           </div>
 
           <div className="grid gap-3 md:grid-cols-[0.7fr_1.3fr]">
-            <div className="rounded-lg bg-neutral-950 p-4 text-white">
-              <p className="m-0 text-sm font-bold text-neutral-300">現在のプラン</p>
-              <p className="m-0 mt-2 text-3xl font-black">{plan.id}</p>
-              <p className="m-0 mt-2 text-sm font-semibold text-neutral-300">月額 {formatNumber(plan.price)}円</p>
+            <div className="rounded-lg bg-emerald-950 p-4 text-white">
+              <p className="m-0 text-sm font-bold text-emerald-100">現在のプラン</p>
+              <p className="m-0 mt-2 text-3xl font-black">{planNames[plan.id]}</p>
+              <p className="m-0 mt-2 text-sm font-semibold text-emerald-100">月額 {formatNumber(plan.price)} 円</p>
             </div>
             <div className="grid gap-2">
               {meters.map((meter) => (
@@ -67,7 +75,7 @@ export default async function AccountPage() {
                     <span>{formatNumber(meter.used)} / {formatNumber(meter.limit)}</span>
                   </div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-neutral-100">
-                    <div className="h-full rounded-full bg-emerald-800" style={{ width: `${Math.min(100, (meter.used / meter.limit) * 100)}%` }} />
+                    <div className="h-full rounded-full bg-emerald-800" style={{ width: `${meter.limit ? Math.min(100, (meter.used / meter.limit) * 100) : 0}%` }} />
                   </div>
                 </div>
               ))}

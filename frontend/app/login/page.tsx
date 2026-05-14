@@ -3,7 +3,7 @@
 import { Mail, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { AppHeader, AppLocale } from "../components/AppHeader";
 import { usePreferredLocale } from "../lib/locale";
@@ -13,22 +13,26 @@ const messages = {
     title: "ログイン",
     lead: "無料枠を超える利用や有料プランの申し込みにはログインが必要です。",
     email: "メールアドレス",
+    google: "Googleでログイン",
     send: "ログインリンクを送信",
     sent: "メールを送信しました。リンクを開くとログインできます。",
-    missingConfig: "Supabaseの公開URLと匿名キーが未設定です。",
-    failed: "ログインメールを送信できませんでした。",
+    missingConfig: "SupabaseのURLと匿名キーが未設定です。",
+    failed: "ログインを開始できませんでした。",
     back: "料金を見る",
+    divider: "またはメールでログイン",
     note: "ログイン後、プラン選択や利用枠の管理ができるようになります。"
   },
   en: {
     title: "Log in",
     lead: "Log in to use paid plans or continue after the free allowance.",
     email: "Email address",
+    google: "Continue with Google",
     send: "Send login link",
     sent: "Email sent. Open the link to finish logging in.",
     missingConfig: "Supabase public URL and anon key are not configured.",
-    failed: "Could not send the login email.",
+    failed: "Could not start login.",
     back: "View pricing",
+    divider: "Or log in with email",
     note: "After logging in, you can choose a plan and manage your allowance."
   }
 } satisfies Record<AppLocale, Record<string, string>>;
@@ -41,27 +45,54 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const t = messages[locale];
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setMessage("");
-
+  const supabase = useMemo(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+    return createClient(supabaseUrl, supabaseAnonKey);
+  }, []);
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+  function redirectTo() {
+    const next = searchParams.get("next") || "/account";
+    return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  }
+
+  async function signInWithGoogle() {
+    setMessage("");
+
+    if (!supabase) {
       setMessage(t.missingConfig);
       return;
     }
 
     setIsSending(true);
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const next = searchParams.get("next") || "/account";
-    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: redirectTo()
+      }
+    });
+    setIsSending(false);
 
+    if (error) {
+      setMessage(t.failed);
+    }
+  }
+
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage("");
+
+    if (!supabase) {
+      setMessage(t.missingConfig);
+      return;
+    }
+
+    setIsSending(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: redirectTo
+        emailRedirectTo: redirectTo()
       }
     });
 
@@ -74,13 +105,30 @@ function LoginContent() {
       <div className="mx-auto grid w-full max-w-3xl gap-5">
         <AppHeader locale={locale} currentPage="pricing" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
         <section className="grid gap-5 rounded-lg bg-white/90 p-5 shadow-sm ring-1 ring-neutral-200 md:p-7">
-          <span className="grid h-12 w-12 place-items-center rounded-lg bg-neutral-950 text-white">
+          <span className="grid h-12 w-12 place-items-center rounded-lg bg-emerald-900 text-white">
             <ShieldCheck size={23} aria-hidden="true" />
           </span>
           <div>
             <h1 className="m-0 text-3xl font-black text-neutral-950">{t.title}</h1>
             <p className="m-0 mt-2 text-sm font-semibold leading-6 text-neutral-600">{t.lead}</p>
           </div>
+
+          <button
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-950 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-700 hover:bg-emerald-50 hover:shadow-md active:scale-[0.98]"
+            type="button"
+            onClick={signInWithGoogle}
+            disabled={isSending}
+          >
+            <span className="grid h-6 w-6 place-items-center rounded-full border border-neutral-200 bg-white text-sm font-black text-neutral-700">G</span>
+            <span>{t.google}</span>
+          </button>
+
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-black text-neutral-400">
+            <span className="h-px bg-neutral-200" />
+            <span>{t.divider}</span>
+            <span className="h-px bg-neutral-200" />
+          </div>
+
           <form className="grid gap-3" onSubmit={onSubmit}>
             <label className="grid gap-2 text-sm font-black text-neutral-800">
               <span>{t.email}</span>
