@@ -20,6 +20,7 @@ import {
   Truck,
   Wrench
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -30,18 +31,21 @@ const steps = [
     icon: Camera,
     title: "伝票・メモ・画像を追加",
     text: "スマホで撮影するだけ。",
+    image: "/image/site/top/3step-01.png",
     mock: "camera"
   },
   {
     icon: Sparkles,
     title: "AIが住所を自動抽出",
     text: "複数の訪問先もまとめて整理。",
+    image: "/image/site/top/3step-02.png",
     mock: "list"
   },
   {
     icon: MapPinned,
     title: "Google Mapsですぐ開始",
     text: "そのままナビ開始。",
+    image: "/image/site/top/3step-03.png",
     mock: "map"
   }
 ];
@@ -51,18 +55,21 @@ const features = [
     icon: FileText,
     title: "住所を読み取る",
     text: "伝票・メモ・画像からAIが住所を自動で抽出。入力の手間をゼロにします。",
+    image: "/image/site/top/can-01.png",
     mock: "ocr"
   },
   {
     icon: Route,
     title: "複数ルートを整理",
     text: "複数の訪問先を最適な順番に並び替え、移動距離と訪問時間を削減します。",
+    image: "/image/site/top/can-02.png",
     mock: "route"
   },
   {
     icon: MapPinned,
     title: "Google Maps連携",
     text: "ワンタップですぐGoogle Mapsに連携。ナビ開始までスムーズで、迷わず訪問できます。",
+    image: "/image/site/top/can-03.png",
     mock: "maps"
   }
 ];
@@ -70,21 +77,25 @@ const features = [
 const useCases = [
   {
     icon: Truck,
+    image: "/image/site/top/onsite-01.png",
     title: "軽貨物・配送",
     text: "毎日の配送ルートを最適化し、配送件数と効率をアップ。"
   },
   {
     icon: BriefcaseBusiness,
+    image: "/image/site/top/onsite-02.png",
     title: "営業・訪問",
     text: "訪問先をまとめて管理し、移動時間を有効活用。"
   },
   {
     icon: HeartPulse,
+    image: "/image/site/top/onsite-03.png",
     title: "訪問介護・サービス",
     text: "複数の訪問先を効率よく回り、利用者様の満足度向上に。"
   },
   {
     icon: Wrench,
+    image: "/image/site/top/onsite-04.png",
     title: "点検・メンテナンス",
     text: "点検先を効率的に回り、作業時間を最大化。"
   }
@@ -104,6 +115,7 @@ const faqs = [
   "スマホでも使えますか？"
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function MockVisual({ type }: { type: string }) {
   if (type === "camera") {
     return (
@@ -269,7 +281,9 @@ export default function HomePage() {
               <span className="absolute left-7 top-20 grid h-9 w-9 place-items-center rounded-full border border-blue-100 bg-white text-blue-600 shadow-sm">
                 <step.icon size={19} aria-hidden="true" />
               </span>
-              <MockVisual type={step.mock} />
+              <div className="relative mt-5 h-64 overflow-hidden rounded-xl bg-blue-50">
+                <Image className="object-cover" src={step.image} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" />
+              </div>
             </article>
           ))}
         </div>
@@ -290,7 +304,9 @@ export default function HomePage() {
                     <p className="m-0 mt-3 text-sm font-bold leading-7 text-slate-600">{feature.text}</p>
                   </div>
                 </div>
-                <MockVisual type={feature.mock} />
+                <div className="relative mt-5 h-64 overflow-hidden rounded-xl bg-blue-50">
+                  <Image className="object-cover" src={feature.image} alt="" fill sizes="(min-width: 1024px) 33vw, 100vw" />
+                </div>
               </article>
             ))}
           </div>
@@ -308,8 +324,7 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="relative min-h-72 overflow-hidden">
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.70))]" />
-            <MockVisual type="map" />
+            <Image className="object-cover" src="/image/site/top/cta-01.png" alt="" fill sizes="(min-width: 1024px) 55vw, 100vw" />
           </div>
         </div>
       </section>
@@ -320,12 +335,7 @@ export default function HomePage() {
           {useCases.map((item) => (
             <article key={item.title} className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
               <div className="relative h-28 overflow-hidden rounded-xl bg-blue-50">
-                <div className="absolute inset-0 grid place-items-center text-blue-500">
-                  <item.icon size={42} aria-hidden="true" />
-                </div>
-                <span className="absolute left-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-blue-600 text-white">
-                  <item.icon size={22} aria-hidden="true" />
-                </span>
+                <Image className="object-cover" src={item.image} alt="" fill sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw" />
               </div>
               <h3 className="m-0 mt-5 text-xl font-black leading-8">{item.title}</h3>
               <p className="m-0 mt-3 text-sm font-bold leading-7 text-slate-600">{item.text}</p>
@@ -381,8 +391,8 @@ export default function HomePage() {
               <ArrowRight size={17} aria-hidden="true" />
             </Link>
           </div>
-          <div className="grid min-h-72 place-items-center bg-blue-600/40">
-            <MockVisual type="map" />
+          <div className="relative min-h-72 overflow-hidden bg-blue-600/40">
+            <Image className="object-cover" src="/image/site/top/cta-02.png" alt="" fill sizes="(min-width: 1024px) 46vw, 100vw" />
           </div>
         </div>
       </section>
