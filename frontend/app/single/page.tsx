@@ -97,6 +97,13 @@ function primaryButtonClass() {
   return "primary-action aspect-square min-h-14 px-0";
 }
 
+function headerButtonClass(active = true) {
+  return [
+    "grid h-10 w-10 shrink-0 place-items-center rounded-2xl border shadow-sm transition active:scale-[0.97]",
+    active ? "border-blue-100 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50" : "border-neutral-200 bg-neutral-100 text-neutral-400"
+  ].join(" ");
+}
+
 function iconChoiceClass() {
   return "choice-tile aspect-square min-h-28";
 }
@@ -196,14 +203,25 @@ export default function Home() {
         <div className="grid min-h-0 gap-2 md:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] lg:gap-4 lg:items-start">
           <section className="app-panel grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-2 p-2 sm:p-3 lg:gap-4 lg:p-4" aria-label={t.photoAria}>
             <div className="flex items-start justify-between gap-2">
-              <div>
+              <div className="flex items-center gap-3">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+                  <ScanText size={20} aria-hidden="true" />
+                </span>
+                <div>
                 <p className="app-eyebrow">{t.capturePanel}</p>
                 <h1 className="app-heading mt-2">{t.capture}</h1>
-                <p className="app-help hidden sm:block">{t.captureHelp}</p>
+                <p className="sr-only">{t.captureHelp}</p>
+                </div>
               </div>
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800" title={imageFile ? t.readyPhoto : t.noPhoto} aria-label={imageFile ? t.readyPhoto : t.noPhoto}>
-                {imageFile ? <Check size={16} aria-hidden="true" /> : <XCircle size={16} aria-hidden="true" />}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600" title={imageFile ? t.readyPhoto : t.noPhoto} aria-label={imageFile ? t.readyPhoto : t.noPhoto}>
+                  {imageFile ? <Check size={16} aria-hidden="true" /> : <XCircle size={16} aria-hidden="true" />}
+                </span>
+                <button className={headerButtonClass(Boolean(imageFile || result || manualAddress || error))} type="button" onClick={resetCapture} disabled={!imageFile && !result && !manualAddress && !error} aria-label={t.resetAria} title={t.resetAria}>
+                  <RotateCcw size={18} aria-hidden="true" />
+                  <span className="sr-only">{t.reset}</span>
+                </button>
+              </div>
             </div>
 
             <div className="media-stage lg:aspect-[4/3]">
@@ -229,32 +247,35 @@ export default function Home() {
               <input ref={libraryInputRef} className="pointer-events-none absolute h-px w-px opacity-0" type="file" accept="image/*" onChange={onPickImage} />
             </div>
 
-            <div className="grid grid-cols-4 gap-2">
-              <p className="sr-only">{t.resultTools}</p>
-              <button className={primaryButtonClass()} type="button" onClick={analyzeImage} disabled={!imageFile || isLoading} aria-label={t.analyzeAria} title={t.analyzeAria}>
-                {isLoading ? <Loader2 className="animate-spin" size={22} aria-hidden="true" /> : <ScanText size={22} aria-hidden="true" />}
-                <span className="sr-only">{isLoading ? t.analyzing : t.analyze}</span>
-              </button>
-              <button className={secondaryButtonClass()} type="button" onClick={() => cameraInputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
-                <Camera size={18} aria-hidden="true" />
-                <span className="sr-only">{t.retake}</span>
-              </button>
-              <button className={secondaryButtonClass()} type="button" onClick={() => libraryInputRef.current?.click()} aria-label={t.libraryAria} title={t.libraryAria}>
-                <ImagePlus size={18} aria-hidden="true" />
-                <span className="sr-only">{t.chooseImage}</span>
-              </button>
-              <button className={secondaryButtonClass()} type="button" onClick={resetCapture} aria-label={t.resetAria} title={t.resetAria}>
-                <RotateCcw size={19} aria-hidden="true" />
-                <span className="sr-only">{t.reset}</span>
-              </button>
-            </div>
+            {previewUrl ? (
+              <div className="grid grid-cols-3 gap-2 rounded-2xl border border-blue-100 bg-white/75 p-2 shadow-sm">
+                <p className="sr-only">{t.resultTools}</p>
+                <button className={primaryButtonClass()} type="button" onClick={analyzeImage} disabled={!imageFile || isLoading} aria-label={t.analyzeAria} title={t.analyzeAria}>
+                  {isLoading ? <Loader2 className="animate-spin" size={22} aria-hidden="true" /> : <ScanText size={22} aria-hidden="true" />}
+                  <span className="sr-only">{isLoading ? t.analyzing : t.analyze}</span>
+                </button>
+                <button className={secondaryButtonClass()} type="button" onClick={() => cameraInputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
+                  <Camera size={18} aria-hidden="true" />
+                  <span className="sr-only">{t.retake}</span>
+                </button>
+                <button className={secondaryButtonClass()} type="button" onClick={() => libraryInputRef.current?.click()} aria-label={t.libraryAria} title={t.libraryAria}>
+                  <ImagePlus size={18} aria-hidden="true" />
+                  <span className="sr-only">{t.chooseImage}</span>
+                </button>
+              </div>
+            ) : null}
           </section>
 
           <section className="app-panel grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto_auto] gap-2 p-2 sm:p-3 md:sticky md:top-2 lg:top-4 lg:gap-4 lg:p-4" aria-label={t.destination}>
-            <div>
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-2xl bg-blue-50 text-blue-600">
+                <Navigation size={20} aria-hidden="true" />
+              </span>
+              <div>
               <p className="app-eyebrow">{t.confirmPanel}</p>
               <h2 className="app-heading mt-2">{t.destination}</h2>
-              <p className="app-help hidden sm:block">{t.mapsHelp}</p>
+              <p className="sr-only">{t.mapsHelp}</p>
+              </div>
             </div>
 
             <label className="grid min-h-0 grid-rows-[auto_1fr] gap-1">

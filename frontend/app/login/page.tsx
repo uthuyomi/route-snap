@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { AppHeader, AppLocale } from "../components/AppHeader";
+import { AppLocale } from "../components/AppHeader";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { usePreferredLocale } from "../lib/locale";
 
 const messages = {
@@ -38,7 +39,7 @@ const messages = {
 } satisfies Record<AppLocale, Record<string, string>>;
 
 function LoginContent() {
-  const [locale, setLocale] = usePreferredLocale();
+  const [locale] = usePreferredLocale();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -101,39 +102,39 @@ function LoginContent() {
   }
 
   return (
-    <main className="min-h-svh app-surface px-4 py-4 sm:px-6 lg:py-8">
-      <div className="mx-auto grid w-full max-w-3xl gap-5">
-        <AppHeader locale={locale} currentPage="pricing" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
-        <section className="grid gap-5 rounded-lg bg-white/90 p-5 shadow-sm ring-1 ring-neutral-200 md:p-7">
-          <span className="grid h-12 w-12 place-items-center rounded-lg bg-emerald-900 text-white">
+    <main className="site-page">
+      <SiteHeader />
+      <div className="site-wrap max-w-3xl">
+        <section className="site-section grid gap-6">
+          <span className="grid h-12 w-12 place-items-center rounded-xl bg-blue-600 text-white">
             <ShieldCheck size={23} aria-hidden="true" />
           </span>
           <div>
-            <h1 className="m-0 text-3xl font-black text-neutral-950">{t.title}</h1>
-            <p className="m-0 mt-2 text-sm font-semibold leading-6 text-neutral-600">{t.lead}</p>
+            <h1 className="m-0 text-4xl font-black text-[#061a3a]">{t.title}</h1>
+            <p className="m-0 mt-3 text-sm font-bold leading-7 text-slate-600">{t.lead}</p>
           </div>
 
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-lg border border-neutral-200 bg-white px-4 text-sm font-black text-neutral-950 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-700 hover:bg-emerald-50 hover:shadow-md active:scale-[0.98]"
+            className="site-secondary gap-3"
             type="button"
             onClick={signInWithGoogle}
             disabled={isSending}
           >
-            <span className="grid h-6 w-6 place-items-center rounded-full border border-neutral-200 bg-white text-sm font-black text-neutral-700">G</span>
+            <span className="grid h-6 w-6 place-items-center rounded-full border border-blue-100 bg-white text-sm font-black text-blue-700">G</span>
             <span>{t.google}</span>
           </button>
 
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-black text-neutral-400">
-            <span className="h-px bg-neutral-200" />
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-black text-slate-400">
+            <span className="h-px bg-blue-100" />
             <span>{t.divider}</span>
-            <span className="h-px bg-neutral-200" />
+            <span className="h-px bg-blue-100" />
           </div>
 
           <form className="grid gap-3" onSubmit={onSubmit}>
             <label className="grid gap-2 text-sm font-black text-neutral-800">
               <span>{t.email}</span>
               <input
-                className="form-field h-12 px-3"
+                className="site-field h-12 px-3"
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -141,18 +142,19 @@ function LoginContent() {
                 autoComplete="email"
               />
             </label>
-            <button className="primary-action" type="submit" disabled={isSending}>
+            <button className="site-primary" type="submit" disabled={isSending}>
               <Mail size={18} aria-hidden="true" />
               <span>{t.send}</span>
             </button>
           </form>
-          {message ? <p className="m-0 rounded-lg bg-neutral-50 p-3 text-sm font-bold text-neutral-700">{message}</p> : null}
-          <div className="grid gap-2 border-t border-neutral-200 pt-4">
-            <p className="m-0 text-sm font-semibold leading-6 text-neutral-500">{t.note}</p>
-            <Link className="secondary-action w-fit" href="/pricing">{t.back}</Link>
+          {message ? <p className="m-0 rounded-lg bg-blue-50 p-4 text-sm font-bold leading-7 text-slate-700">{message}</p> : null}
+          <div className="grid gap-3 border-t border-blue-100 pt-5">
+            <p className="m-0 text-sm font-bold leading-7 text-slate-500">{t.note}</p>
+            <Link className="site-secondary w-fit" href="/pricing">{t.back}</Link>
           </div>
         </section>
       </div>
+      <SiteFooter />
     </main>
   );
 }

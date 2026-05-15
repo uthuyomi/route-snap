@@ -1,8 +1,8 @@
 ﻿"use client";
 
-import { ArrowUpDown, Bot, Camera, Check, ExternalLink, Loader2, Navigation, Trash2, Upload, XCircle } from "lucide-react";
+import { AlertCircle, ArrowUpDown, Bot, Camera, Check, ExternalLink, GripVertical, Loader2, Navigation, RotateCcw, Trash2, Upload, XCircle } from "lucide-react";
 import Image from "next/image";
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
 import { prepareImageForUpload } from "../lib/imageUpload";
 import { usePreferredLocale } from "../lib/locale";
@@ -74,6 +74,7 @@ const messages = {
     notesPlaceholder: "例: 10時までに新宿、午後は渋谷方面を優先。高速道路は避けたい。",
     address: "住所",
     delete: "削除",
+    clear: "クリア",
     empty: "ファイルを取り込むか、カメラで住所を撮影してください",
     fileOrder: "取り込み順で使う",
     aiOrder: "AIで順番を最適化",
@@ -93,7 +94,9 @@ const messages = {
     fileMode: "取り込み順",
     aiMode: "AI順",
     statusReady: "OK",
-    statusError: "要確認"
+    statusError: "要確認",
+    reorderHelp: "ドラッグ、または2件を順にタップして入れ替え",
+    individualInstructionNotice: "すべての個別指示を入力してからAI最適化を押してください"
   },
   en: {
     readingImage: "Reading image",
@@ -119,6 +122,7 @@ const messages = {
     notesPlaceholder: "Example: Reach Shinjuku by 10:00, prioritize Shibuya in the afternoon, avoid highways.",
     address: "Address",
     delete: "Delete",
+    clear: "Clear",
     empty: "Import files or take address photos",
     fileOrder: "Use import order",
     aiOrder: "Optimize with AI",
@@ -138,7 +142,9 @@ const messages = {
     fileMode: "Import",
     aiMode: "AI",
     statusReady: "OK",
-    statusError: "Check"
+    statusError: "Check",
+    reorderHelp: "Drag, or tap two stops to swap them",
+    individualInstructionNotice: "Enter all individual instructions before running AI optimization"
   }
 } satisfies Record<AppLocale, Record<string, string>>;
 
@@ -208,6 +214,13 @@ function buttonClass(active = true) {
   ].join(" ");
 }
 
+function headerButtonClass(active = true) {
+  return [
+    "grid h-10 w-10 place-items-center rounded-2xl border shadow-sm transition active:scale-[0.97]",
+    active ? "border-blue-100 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50" : "border-neutral-200 bg-neutral-100 text-neutral-400"
+  ].join(" ");
+}
+
 function primaryButtonClass() {
   return "primary-action min-h-14";
 }
@@ -218,8 +231,8 @@ function iconChoiceClass() {
 
 function routeModeButtonClass(active: boolean) {
   return [
-    "inline-flex aspect-square min-h-14 items-center justify-center rounded-lg border text-sm font-bold transition active:scale-[0.98] disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-neutral-400",
-    active ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_24px_rgba(6,78,59,0.20)]" : "border-neutral-200 bg-white/85 text-neutral-800 hover:border-emerald-500 hover:bg-white"
+    "inline-flex aspect-square min-h-14 items-center justify-center rounded-xl border text-sm font-bold transition active:scale-[0.98] disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-neutral-400",
+    active ? "border-blue-600 bg-blue-600 text-white shadow-[0_10px_24px_rgba(37,99,235,0.22)]" : "border-blue-100 bg-white/90 text-[#071936] hover:border-blue-300 hover:bg-blue-50"
   ].join(" ");
 }
 
@@ -259,6 +272,8 @@ export default function BatchRoutePage() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeNotes, setRouteNotes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
+  const [draggedStopId, setDraggedStopId] = useState<string | null>(null);
   const t = messages[locale];
 
   const usableStops = useMemo(() => stops.filter((stop) => stop.address.trim()), [stops]);
@@ -272,6 +287,8 @@ export default function BatchRoutePage() {
   const routeAddresses = useMemo(() => orderedStops.map((stop) => stop.address.trim()).filter(Boolean), [orderedStops]);
   const mapsUrl = useMemo(() => buildRouteMapsUrl(routeAddresses), [routeAddresses]);
   const activeImagePreview = imagePreviews.length ? imagePreviews[imagePreviews.length - 1] : null;
+  const canClear = Boolean(stops.length || imagePreviews.length || routeOrderIds.length || notes || routeNotes.length || error);
+  const hasIndividualInstructions = useMemo(() => stops.some((stop) => stop.routeNote.trim()), [stops]);
 
   useEffect(() => {
     const previewUrls = previewUrlsRef.current;
@@ -287,6 +304,21 @@ export default function BatchRoutePage() {
     if (cameraInputRef.current) {
       cameraInputRef.current.value = "";
     }
+  }
+
+  function clearWorkspace() {
+    previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    previewUrlsRef.current = [];
+    setStops([]);
+    setImagePreviews([]);
+    setRouteOrderIds([]);
+    setRouteMode("file");
+    setNotes("");
+    setRouteNotes([]);
+    setError(null);
+    setSelectedStopId(null);
+    setDraggedStopId(null);
+    clearInputs();
   }
 
   async function readImageFile(file: File) {
@@ -479,6 +511,66 @@ export default function BatchRoutePage() {
   function removeStop(id: string) {
     setStops((current) => current.filter((stop) => stop.id !== id));
     setRouteOrderIds((current) => current.filter((stopId) => stopId !== id));
+    setSelectedStopId((current) => (current === id ? null : current));
+  }
+
+  function applyManualOrder(nextStops: BatchStop[]) {
+    setRouteMode("file");
+    setRouteOrderIds(nextStops.map((stop) => stop.id));
+    setRouteNotes([]);
+    setError(null);
+  }
+
+  function swapStops(sourceId: string, targetId: string) {
+    if (sourceId === targetId) return;
+    const sourceIndex = orderedStops.findIndex((stop) => stop.id === sourceId);
+    const targetIndex = orderedStops.findIndex((stop) => stop.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const nextStops = [...orderedStops];
+    [nextStops[sourceIndex], nextStops[targetIndex]] = [nextStops[targetIndex], nextStops[sourceIndex]];
+    applyManualOrder(nextStops);
+  }
+
+  function moveStop(sourceId: string, targetId: string) {
+    if (sourceId === targetId) return;
+    const sourceIndex = orderedStops.findIndex((stop) => stop.id === sourceId);
+    const targetIndex = orderedStops.findIndex((stop) => stop.id === targetId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+
+    const nextStops = [...orderedStops];
+    const [source] = nextStops.splice(sourceIndex, 1);
+    nextStops.splice(targetIndex, 0, source);
+    applyManualOrder(nextStops);
+  }
+
+  function selectOrSwapStop(id: string) {
+    if (!selectedStopId) {
+      setSelectedStopId(id);
+      return;
+    }
+
+    if (selectedStopId === id) {
+      setSelectedStopId(null);
+      return;
+    }
+
+    swapStops(selectedStopId, id);
+    setSelectedStopId(null);
+  }
+
+  function onRouteDragStart(event: DragEvent<HTMLLIElement>, id: string) {
+    setDraggedStopId(id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", id);
+  }
+
+  function onRouteDrop(event: DragEvent<HTMLLIElement>, targetId: string) {
+    event.preventDefault();
+    const sourceId = event.dataTransfer.getData("text/plain") || draggedStopId;
+    if (sourceId) moveStop(sourceId, targetId);
+    setDraggedStopId(null);
+    setSelectedStopId(null);
   }
 
   function useFileOrder() {
@@ -486,6 +578,8 @@ export default function BatchRoutePage() {
     setRouteOrderIds([]);
     setRouteNotes([]);
     setError(null);
+    setSelectedStopId(null);
+    setDraggedStopId(null);
   }
 
   async function optimizeRoute() {
@@ -534,11 +628,10 @@ export default function BatchRoutePage() {
     }
   }
 
-  async function openMaps() {
+  function openMaps() {
     if (!mapsUrl) return;
 
-    const origin = await getCurrentPosition();
-    window.location.assign(buildRouteMapsUrl(routeAddresses, origin ?? undefined));
+    window.location.assign(buildRouteMapsUrl(routeAddresses));
   }
 
   return (
@@ -552,23 +645,29 @@ export default function BatchRoutePage() {
               <div>
                 <p className="app-eyebrow">{t.uploadPanel}</p>
                 <h1 className="m-0 mt-2 text-2xl font-black leading-tight text-neutral-950">{t.addFiles}</h1>
-                <p className="app-help">{t.uploadHelp}</p>
+                <p className="sr-only">{t.uploadHelp}</p>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div className="metric-card" title={t.imported}>
-                  <span className="block text-lg font-black tabular-nums text-neutral-950">{stops.length}</span>
-                  <span className="block text-xs font-bold text-neutral-500">{t.imported}</span>
+              <div className="flex items-start gap-2">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="metric-card" title={t.imported}>
+                    <span className="block text-lg font-black tabular-nums text-neutral-950">{stops.length}</span>
+                    <span className="block text-xs font-bold text-neutral-500">{t.imported}</span>
+                  </div>
+                  <div className="metric-card" title={t.ready}>
+                    <span className="block text-lg font-black tabular-nums text-neutral-950">{usableStops.length}</span>
+                    <span className="block text-xs font-bold text-neutral-500">{t.ready}</span>
+                  </div>
+                  <div className="metric-card" title={`${t.plannedBy}: ${routeMode === "ai" ? t.aiMode : t.fileMode}`}>
+                    <span className="grid min-h-6 place-items-center text-neutral-950">
+                      {routeMode === "ai" ? <Bot size={20} aria-hidden="true" /> : <ArrowUpDown size={20} aria-hidden="true" />}
+                    </span>
+                    <span className="block text-xs font-bold text-neutral-500">{routeMode === "ai" ? t.aiMode : t.fileMode}</span>
+                  </div>
                 </div>
-                <div className="metric-card" title={t.ready}>
-                  <span className="block text-lg font-black tabular-nums text-neutral-950">{usableStops.length}</span>
-                  <span className="block text-xs font-bold text-neutral-500">{t.ready}</span>
-                </div>
-                <div className="metric-card" title={`${t.plannedBy}: ${routeMode === "ai" ? t.aiMode : t.fileMode}`}>
-                  <span className="grid min-h-6 place-items-center text-neutral-950">
-                    {routeMode === "ai" ? <Bot size={20} aria-hidden="true" /> : <ArrowUpDown size={20} aria-hidden="true" />}
-                  </span>
-                  <span className="block text-xs font-bold text-neutral-500">{routeMode === "ai" ? t.aiMode : t.fileMode}</span>
-                </div>
+                <button className={headerButtonClass(canClear)} type="button" onClick={clearWorkspace} disabled={!canClear || isReading || isOptimizing} aria-label={t.clear} title={t.clear}>
+                  <RotateCcw size={18} aria-hidden="true" />
+                  <span className="sr-only">{t.clear}</span>
+                </button>
               </div>
             </div>
 
@@ -617,16 +716,18 @@ export default function BatchRoutePage() {
             </div>
 
             <div className="grid gap-2">
-              <div className="grid grid-cols-2 gap-2">
-                <button className={buttonClass()} type="button" onClick={() => fileInputRef.current?.click()} disabled={isReading} aria-label={t.importFiles} title={t.importFiles}>
-                  {isReading ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Upload size={18} aria-hidden="true" />}
-                  <span className="sr-only">{t.importFiles}</span>
-                </button>
-                <button className={buttonClass()} type="button" onClick={() => cameraInputRef.current?.click()} disabled={isReading} aria-label={t.cameraCapture} title={t.cameraCapture}>
-                  {isReading ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Camera size={18} aria-hidden="true" />}
-                  <span className="sr-only">{t.cameraCapture}</span>
-                </button>
-              </div>
+              {activeImagePreview ? (
+                <div className="grid grid-cols-2 gap-2 rounded-2xl border border-blue-100 bg-white/75 p-2 shadow-sm">
+                  <button className={buttonClass()} type="button" onClick={() => fileInputRef.current?.click()} disabled={isReading} aria-label={t.importFiles} title={t.importFiles}>
+                    {isReading ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Upload size={18} aria-hidden="true" />}
+                    <span className="sr-only">{t.importFiles}</span>
+                  </button>
+                  <button className={buttonClass()} type="button" onClick={() => cameraInputRef.current?.click()} disabled={isReading} aria-label={t.cameraCapture} title={t.cameraCapture}>
+                    {isReading ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Camera size={18} aria-hidden="true" />}
+                    <span className="sr-only">{t.cameraCapture}</span>
+                  </button>
+                </div>
+              ) : null}
 
               {imagePreviews.length ? (
                 <section className="grid gap-2" aria-label={t.imagePreview}>
@@ -668,7 +769,7 @@ export default function BatchRoutePage() {
               {stops.length ? (
                 stops.map((stop, index) => (
                   <div key={stop.id} className="app-panel-muted grid gap-2 p-3 sm:grid-cols-[2.5rem_1fr_auto] sm:items-start">
-                    <span className="grid h-10 w-10 place-items-center rounded-lg bg-emerald-900 text-sm font-black text-white shadow-sm">{index + 1}</span>
+                    <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-600 text-sm font-black text-white shadow-sm shadow-blue-600/20">{index + 1}</span>
                     <div className="grid gap-2">
                       <label className="grid gap-1">
                         <span className="text-xs font-bold text-neutral-500">{t.address}</span>
@@ -690,7 +791,7 @@ export default function BatchRoutePage() {
                           disabled={stop.status === "reading"}
                           aria-label={`${t.stopNote}: ${stop.sourceName}`}
                         />
-                        <span className="text-xs font-semibold text-neutral-500">{t.stopNoteHelp}</span>
+                        <span className="sr-only">{t.stopNoteHelp}</span>
                       </label>
                       <p className="m-0 line-clamp-2 text-xs font-semibold text-neutral-500">
                         {stop.sourceName}
@@ -713,7 +814,7 @@ export default function BatchRoutePage() {
             <div>
               <p className="app-eyebrow">{t.routePanel}</p>
               <h2 className="m-0 mt-1 text-2xl font-black leading-tight text-neutral-950">{t.routeOrder}</h2>
-              <p className="m-0 mt-1 text-sm font-semibold leading-5 text-neutral-500">{t.routeHelp}</p>
+              <p className="sr-only">{t.routeHelp}</p>
             </div>
 
             <div className="grid grid-cols-[auto_auto_1fr] gap-2">
@@ -755,13 +856,45 @@ export default function BatchRoutePage() {
                   {locale === "ja" ? t.countUnit : ` ${t.countUnit}`}
                 </span>
               </div>
+              <p className="m-0 text-xs font-bold leading-5 text-blue-600">{t.reorderHelp}</p>
               <ol className="m-0 grid list-none gap-2 p-0">
                 {orderedStops.map((stop, index) => (
-                  <li key={stop.id} className="grid grid-cols-[2rem_1fr_auto] items-start gap-2 rounded-lg bg-white/90 p-2 text-sm shadow-sm">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-900 text-xs font-black text-white">{index + 1}</span>
-                    <span className="min-w-0">
+                  <li
+                    key={stop.id}
+                    className={[
+                      "grid cursor-grab grid-cols-[auto_1fr_auto] items-start gap-2 rounded-2xl border bg-white/90 p-2 text-sm shadow-sm transition active:cursor-grabbing",
+                      selectedStopId === stop.id ? "border-blue-500 ring-4 ring-blue-100" : "border-blue-100 hover:border-blue-300",
+                      draggedStopId === stop.id ? "opacity-60" : ""
+                    ].join(" ")}
+                    draggable
+                    onClick={() => selectOrSwapStop(stop.id)}
+                    onDragStart={(event) => onRouteDragStart(event, stop.id)}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                    }}
+                    onDrop={(event) => onRouteDrop(event, stop.id)}
+                    onDragEnd={() => setDraggedStopId(null)}
+                    title={t.reorderHelp}
+                  >
+                    <span className="grid gap-1">
+                      <span className="grid h-8 w-8 place-items-center rounded-xl bg-blue-600 text-xs font-black text-white">{index + 1}</span>
+                      <span className="grid h-8 w-8 place-items-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
+                        <GripVertical size={16} aria-hidden="true" />
+                      </span>
+                    </span>
+                    <span className="grid min-w-0 gap-2" onClick={(event) => event.stopPropagation()}>
                       <span className="block truncate font-bold text-neutral-900">{stop.address}</span>
-                      {stop.routeNote ? <span className="mt-1 block line-clamp-2 text-xs font-semibold leading-5 text-neutral-500">{stop.routeNote}</span> : null}
+                      <label className="grid gap-1">
+                        <span className="sr-only">{t.stopNote}</span>
+                        <input
+                          className="form-field h-10 px-3 text-sm"
+                          value={stop.routeNote}
+                          onChange={(event) => updateStopRouteNote(stop.id, event.target.value)}
+                          placeholder={t.stopNotePlaceholder}
+                          aria-label={`${t.stopNote}: ${stop.address}`}
+                        />
+                      </label>
                     </span>
                     <span className={stop.status === "error" ? "mt-1 inline-flex items-center gap-1 text-xs font-bold text-red-600" : "mt-1 inline-flex items-center gap-1 text-xs font-bold text-neutral-700"}>
                       {stop.status === "error" ? <XCircle size={17} aria-hidden="true" /> : <Check size={17} aria-hidden="true" />}
@@ -773,6 +906,13 @@ export default function BatchRoutePage() {
               {!orderedStops.length ? <p className="m-0 text-sm font-bold text-neutral-500">{t.emptyOrder}</p> : null}
             </div>
 
+            {hasIndividualInstructions ? (
+              <div className="app-panel-muted flex items-start gap-2 border-blue-200 bg-blue-50/80 p-3 text-sm font-bold leading-6 text-blue-700">
+                <AlertCircle className="mt-0.5 shrink-0" size={18} aria-hidden="true" />
+                <p className="m-0">{t.individualInstructionNotice}</p>
+              </div>
+            ) : null}
+
             {error || routeNotes.length ? (
               <div className="app-panel-muted p-3 text-sm leading-6 text-neutral-700">
                 {error ? <p className="m-0 text-red-700">{error}</p> : null}
@@ -780,7 +920,7 @@ export default function BatchRoutePage() {
               </div>
             ) : null}
 
-            <p className="m-0 text-xs font-semibold leading-5 text-neutral-500">{t.mapsLimit}</p>
+            <p className="sr-only">{t.mapsLimit}</p>
           </section>
         </div>
       </div>

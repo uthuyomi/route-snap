@@ -13,9 +13,7 @@ import {
   Smartphone,
   Truck,
 } from "lucide-react";
-import { AppHeader } from "../components/AppHeader";
-import { LegalFooter } from "../components/LegalFooter";
-import { usePreferredLocale } from "../lib/locale";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 const contactEmail = "kaiseif4e@gmail.com";
 
@@ -77,43 +75,41 @@ const faqItems = [
 ];
 
 export default function FaqPage() {
-  const [locale, setLocale] = usePreferredLocale();
-
   return (
-    <main className="app-surface min-h-svh text-neutral-950">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 pb-10 pt-4 sm:px-6 lg:px-8">
-        <AppHeader locale={locale} onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} currentPage="home" />
+    <main className="site-page">
+      <SiteHeader />
+      <div className="site-wrap">
 
-        <section className="grid gap-5 rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-emerald-100 md:p-8">
+        <section className="site-section grid gap-5">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-800 ring-1 ring-emerald-100">
+            <div className="site-kicker">
               <HelpCircle className="h-4 w-4" aria-hidden="true" />
               よくある質問
             </div>
-            <h1 className="m-0 mt-4 text-3xl font-black leading-tight tracking-tight text-neutral-950 sm:text-5xl">
+            <h1 className="site-title mt-4">
               Route Snap の使い方と料金について
             </h1>
-            <p className="m-0 mt-4 max-w-2xl text-sm font-semibold leading-7 text-neutral-600 sm:text-base">
+            <p className="site-lead mt-4">
               配送・訪問・点検・清掃など、住所を扱う現場業務で使う前に確認されやすい内容をまとめています。
             </p>
           </div>
         </section>
 
-        <section className="grid gap-3 md:grid-cols-2">
+        <section className="grid gap-4 md:grid-cols-2">
           {faqItems.map((item) => {
             const Icon = item.icon;
             return (
               <article
                 key={item.question}
-                className="group grid gap-3 rounded-[24px] bg-white p-5 shadow-sm ring-1 ring-emerald-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                className="site-card group grid gap-3"
               >
                 <div className="flex items-start gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </span>
                   <div>
-                    <h2 className="m-0 text-base font-black text-neutral-950">{item.question}</h2>
-                    <p className="m-0 mt-2 text-sm font-semibold leading-6 text-neutral-600">{item.answer}</p>
+                    <h2 className="m-0 text-base font-black text-[#061a3a]">{item.question}</h2>
+                    <p className="m-0 mt-3 text-sm font-bold leading-7 text-slate-600">{item.answer}</p>
                   </div>
                 </div>
               </article>
@@ -121,31 +117,31 @@ export default function FaqPage() {
           })}
         </section>
 
-        <section className="grid gap-4 rounded-[28px] bg-[#10251d] p-5 text-white shadow-sm md:grid-cols-[1fr_auto] md:items-center md:p-7">
+        <section className="grid gap-4 rounded-2xl bg-blue-700 p-6 text-white shadow-sm md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <h2 className="m-0 text-2xl font-black">解決しない場合はお問い合わせください</h2>
-            <p className="m-0 mt-2 text-sm font-semibold leading-6 text-emerald-50/80">
+            <p className="m-0 mt-3 text-sm font-bold leading-7 text-blue-50">
               決済、解約、データの扱い、利用方法について確認したい場合は、{contactEmail} までご連絡ください。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
               href="/contact"
-              className="inline-flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-emerald-950 shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-50"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg bg-white px-5 text-sm font-black text-blue-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-50"
             >
               問い合わせる
             </Link>
             <Link
               href="/pricing"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-white/20 px-5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10"
+              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/20 px-5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10"
             >
               料金を見る
             </Link>
           </div>
         </section>
 
-        <LegalFooter />
       </div>
+      <SiteFooter />
     </main>
   );
 }

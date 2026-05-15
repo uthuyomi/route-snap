@@ -1,9 +1,10 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
-import { MapPinned, Menu, X } from "lucide-react";
+import { createClient, type User } from "@supabase/supabase-js";
+import { CreditCard, Globe2, Home, LogIn, LogOut, MapPinned, Menu, Route, ScanText, UserCircle, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type AppLocale = "ja" | "en";
 type AppPage = "home" | "app" | "single" | "batch" | "pricing";
@@ -16,181 +17,159 @@ type AppHeaderProps = {
 
 const labels = {
   ja: {
-    subtitle: "住所を読み取り、そのままルートへ",
-    home: "紹介トップ",
-    app: "操作トップ",
-    single: "住所を読み取る",
-    batch: "訪問ルートを作成",
-    pricing: "料金",
+    app: "アプリ操作",
+    siteTop: "トップページ",
+    single: "住所読み取り",
+    batch: "ルート作成",
+    pricing: "料金ページ",
     login: "ログイン",
     account: "アカウント",
     logout: "ログアウト",
-    paid: "有料",
-    faq: "FAQ",
-    contact: "お問い合わせ",
-    terms: "利用規約",
-    privacy: "プライバシー",
-    tokusho: "特商法",
-    language: "言語を切り替え",
     menu: "メニュー",
     close: "閉じる",
   },
   en: {
-    subtitle: "Read addresses and turn them into routes",
-    home: "Intro",
-    app: "App Home",
-    single: "Address Reader",
-    batch: "Route Planner",
+    app: "App",
+    siteTop: "Site top",
+    single: "Address reader",
+    batch: "Route planner",
     pricing: "Pricing",
     login: "Log in",
     account: "Account",
     logout: "Log out",
-    paid: "Paid",
-    faq: "FAQ",
-    contact: "Contact",
-    terms: "Terms",
-    privacy: "Privacy",
-    tokusho: "Disclosure",
-    language: "Change language",
     menu: "Menu",
     close: "Close",
   },
 } satisfies Record<AppLocale, Record<string, string>>;
 
-function navClass(active: boolean) {
+function getAccountName(user: User | null) {
+  if (!user) return "";
+  const metadataName = user.user_metadata?.name || user.user_metadata?.full_name;
+  if (typeof metadataName === "string" && metadataName.trim()) return metadataName.trim();
+  return user.email ?? "アカウント";
+}
+
+function iconButtonClass(active = false) {
   return [
-    "inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98]",
+    "grid h-11 w-11 place-items-center rounded-xl border text-sm font-bold shadow-sm transition active:scale-[0.97]",
     active
-      ? "border-neutral-950 bg-neutral-950 text-white"
-      : "border-neutral-200 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50",
+      ? "border-blue-600 bg-blue-600 text-white shadow-blue-600/20"
+      : "border-blue-100 bg-white/90 text-[#071936] hover:border-blue-300 hover:bg-blue-50",
   ].join(" ");
 }
 
 function menuItemClass(active = false, featured = false) {
-  if (active) {
-    return "flex min-h-12 items-center justify-between gap-4 rounded-lg border border-emerald-900 bg-emerald-900 px-4 text-sm font-black text-white shadow-sm transition active:scale-[0.98]";
-  }
-
-  if (featured) {
-    return "flex min-h-12 items-center justify-between gap-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-950 transition hover:border-emerald-500 hover:bg-emerald-100 active:scale-[0.98]";
-  }
-
-  return "flex min-h-12 items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white px-4 text-sm font-bold text-neutral-800 transition hover:border-neutral-500 hover:bg-neutral-50 active:scale-[0.98]";
+  return [
+    "flex min-h-12 items-center justify-between gap-4 rounded-xl border px-4 text-sm font-black shadow-sm transition active:scale-[0.98]",
+    active
+      ? "border-blue-600 bg-blue-600 text-white shadow-blue-600/20"
+      : featured
+        ? "border-blue-100 bg-blue-50 text-blue-700 hover:border-blue-300"
+        : "border-blue-100 bg-white text-[#071936] hover:border-blue-300 hover:bg-blue-50",
+  ].join(" ");
 }
 
-function appActionClass(primary = false) {
-  if (primary) {
-    return "flex min-h-14 items-center justify-between gap-4 rounded-xl border border-emerald-900 bg-emerald-900 px-4 text-sm font-black text-white shadow-sm shadow-emerald-950/10 transition hover:-translate-y-0.5 hover:bg-emerald-800 hover:shadow-md active:scale-[0.98]";
-  }
-
-  return "flex min-h-14 items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-950 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-500 hover:bg-emerald-100 hover:shadow-md active:scale-[0.98]";
-}
-
-export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProps) {
+export function AppHeader({ locale, currentPage }: AppHeaderProps) {
   const t = labels[locale];
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const supabase = useMemo(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseAnonKey) return null;
     return createClient(supabaseUrl, supabaseAnonKey);
   }, []);
-  const menuNav = [
-    { href: "/app", label: t.app, page: "app" },
-    { href: "/?landing=1", label: t.home, page: "home" },
-    { href: "/pricing", label: t.pricing },
-    { href: "/faq", label: t.faq },
-    { href: "/contact", label: t.contact },
-    { href: "/legal/terms", label: t.terms },
-    { href: "/legal/privacy", label: t.privacy },
-    { href: "/legal/tokusho", label: t.tokusho },
-  ];
 
   useEffect(() => {
     if (!supabase) return;
 
-    let isMounted = true;
+    let isActive = true;
 
     supabase.auth.getSession().then(({ data }) => {
-      if (isMounted) setIsLoggedIn(Boolean(data.session));
+      if (isActive) setUser(data.session?.user ?? null);
     });
 
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(Boolean(session));
+      setUser(session?.user ?? null);
     });
 
     return () => {
-      isMounted = false;
+      isActive = false;
       data.subscription.unsubscribe();
     };
   }, [supabase]);
 
+  const isLoggedIn = Boolean(user);
+  const accountName = getAccountName(user);
+  const accountHref = isLoggedIn ? "/account/status" : `/login?next=${currentPage === "single" ? "/single" : currentPage === "batch" ? "/batch" : "/app"}`;
+  const canUseDom = typeof document !== "undefined";
+  const menu = canUseDom && isMenuOpen
+    ? createPortal(
+        <div className="fixed inset-0 z-[2147483647]" role="presentation">
+          <button className="absolute inset-0 h-full w-full cursor-default bg-slate-950/10" type="button" aria-label={t.close} onClick={() => setIsMenuOpen(false)} />
+          <nav className="absolute right-4 top-20 grid w-[min(19rem,calc(100vw-2rem))] gap-2 rounded-2xl border border-blue-100 bg-white p-3 shadow-[0_24px_80px_rgba(15,23,42,0.28)] ring-1 ring-blue-50" aria-label={t.menu}>
+            <Link className={menuItemClass(currentPage === "home")} href="/?landing=1" onClick={() => setIsMenuOpen(false)}>
+              <span>{t.siteTop}</span>
+              <Globe2 size={18} aria-hidden="true" />
+            </Link>
+            <Link className={menuItemClass(currentPage === "app", true)} href="/app" onClick={() => setIsMenuOpen(false)}>
+              <span>{t.app}</span>
+              <Home size={18} aria-hidden="true" />
+            </Link>
+            <Link className={menuItemClass(currentPage === "pricing")} href="/pricing" onClick={() => setIsMenuOpen(false)}>
+              <span>{t.pricing}</span>
+              <CreditCard size={18} aria-hidden="true" />
+            </Link>
+          </nav>
+        </div>,
+        document.body
+      )
+    : null;
+
   return (
-    <header className="relative flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-300 bg-white p-3 shadow-sm">
-      <Link className="inline-flex min-w-0 items-center gap-3" href={currentPage === "home" ? "/" : "/app"} aria-label="Route Snap">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-neutral-950 text-white shadow-sm">
-          <MapPinned size={22} aria-hidden="true" />
-        </span>
-        <span className="hidden min-w-0 sm:block">
-          <span className="block text-lg font-bold leading-6 text-neutral-950">Route Snap</span>
-          <span className="block truncate text-xs font-semibold text-neutral-500">{t.subtitle}</span>
-        </span>
+    <header className="relative flex items-center justify-between gap-2 rounded-2xl border border-blue-100 bg-white/90 p-2 shadow-[0_18px_50px_rgba(37,99,235,0.10)] backdrop-blur">
+      <Link className="grid h-12 w-12 place-items-center rounded-2xl bg-blue-600 text-white shadow-sm shadow-blue-600/20" href="/app" aria-label={t.app} title={t.app}>
+        <MapPinned size={24} aria-hidden="true" />
       </Link>
 
-      <button
-        className={navClass(isMenuOpen)}
-        type="button"
-        onClick={() => setIsMenuOpen((open) => !open)}
-        aria-expanded={isMenuOpen}
-        aria-label={isMenuOpen ? t.close : t.menu}
-        title={isMenuOpen ? t.close : t.menu}
-      >
-        {isMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
-        <span>{isMenuOpen ? t.close : t.menu}</span>
-      </button>
+      <nav className="flex min-w-0 items-center gap-2" aria-label="App">
+        <Link className={iconButtonClass(currentPage === "single")} href="/single" aria-label={t.single} title={t.single}>
+          <ScanText size={20} aria-hidden="true" />
+        </Link>
+        <Link className={iconButtonClass(currentPage === "batch")} href="/batch" aria-label={t.batch} title={t.batch}>
+          <Route size={20} aria-hidden="true" />
+        </Link>
+        {isLoggedIn ? (
+          <>
+            <Link className="hidden h-11 max-w-52 items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 text-sm font-black text-[#071936] shadow-sm transition hover:border-blue-300 sm:inline-flex" href="/account/status" aria-label={t.account} title={accountName}>
+              <UserCircle className="shrink-0 text-blue-600" size={20} aria-hidden="true" />
+              <span className="truncate">{accountName}</span>
+            </Link>
+            <Link className={`${iconButtonClass()} sm:hidden`} href="/account/status" aria-label={accountName} title={accountName}>
+              <UserCircle size={20} aria-hidden="true" />
+            </Link>
+            <Link className={iconButtonClass()} href="/logout" aria-label={t.logout} title={t.logout}>
+              <LogOut size={19} aria-hidden="true" />
+            </Link>
+          </>
+        ) : (
+          <Link className={iconButtonClass()} href={accountHref} aria-label={t.login} title={t.login}>
+            <LogIn size={20} aria-hidden="true" />
+          </Link>
+        )}
+        <button
+          className={iconButtonClass(isMenuOpen)}
+          type="button"
+          onClick={() => setIsMenuOpen((open) => !open)}
+          aria-expanded={isMenuOpen}
+          aria-label={isMenuOpen ? t.close : t.menu}
+          title={isMenuOpen ? t.close : t.menu}
+        >
+          {isMenuOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
+        </button>
+      </nav>
 
-      {isMenuOpen ? (
-        <div className="absolute right-3 top-[calc(100%+0.5rem)] z-20 grid w-[min(20rem,calc(100vw-2rem))] gap-2 rounded-lg border border-neutral-300 bg-white p-3 shadow-lg">
-          <nav className="grid gap-2" aria-label="Route Snap">
-            <div className="grid gap-2 rounded-xl bg-emerald-950/5 p-2 ring-1 ring-emerald-100">
-              <Link className={appActionClass(true)} href="/single" onClick={() => setIsMenuOpen(false)}>
-                <span>{t.single}</span>
-                <span className="rounded-lg bg-white/15 px-2 py-1 text-[10px] font-black">START</span>
-              </Link>
-              <Link className={appActionClass(false)} href="/batch" onClick={() => setIsMenuOpen(false)}>
-                <span>{t.batch}</span>
-                <span className="rounded-lg bg-emerald-900/10 px-2 py-1 text-[10px] font-black">{t.paid}</span>
-              </Link>
-            </div>
-            {menuNav.map((item) => (
-              <Link key={item.href} className={menuItemClass("page" in item && item.page === currentPage)} href={item.href} onClick={() => setIsMenuOpen(false)}>
-                <span>{item.label}</span>
-              </Link>
-            ))}
-            {isLoggedIn ? (
-              <>
-                <Link className={menuItemClass(false, true)} href="/account" onClick={() => setIsMenuOpen(false)}>
-                  <span>{t.account}</span>
-                </Link>
-                <Link className={menuItemClass(false)} href="/logout" onClick={() => setIsMenuOpen(false)}>
-                  <span>{t.logout}</span>
-                </Link>
-              </>
-            ) : (
-              <Link className={menuItemClass(false, true)} href="/login" onClick={() => setIsMenuOpen(false)}>
-                <span>{t.login}</span>
-              </Link>
-            )}
-          </nav>
-
-          {onToggleLocale ? (
-            <button className={menuItemClass(false)} type="button" onClick={onToggleLocale} aria-label={t.language} title={t.language}>
-              <span>{locale === "ja" ? "日本語" : "English"}</span>
-            </button>
-          ) : null}
-        </div>
-      ) : null}
+      {menu}
     </header>
   );
 }

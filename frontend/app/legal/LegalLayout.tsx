@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 
 type LegalLayoutProps = {
   title: string;
@@ -8,33 +9,34 @@ type LegalLayoutProps = {
 
 export function LegalLayout({ title, lead, children }: LegalLayoutProps) {
   return (
-    <main className="min-h-svh bg-[#f7f4ed] px-4 py-6 text-neutral-950 sm:px-6 lg:py-10">
-      <div className="mx-auto grid w-full max-w-4xl gap-5">
-        <Link className="w-fit text-sm font-black text-neutral-600 hover:text-neutral-950" href="/">
-          Route Snap
+    <main className="site-page">
+      <SiteHeader />
+      <div className="site-wrap max-w-4xl">
+        <Link className="w-fit text-sm font-black text-blue-600 hover:text-blue-700" href="/?landing=1">
+          route-snap
         </Link>
-        <section className="grid gap-5 rounded-lg bg-white p-5 shadow-sm ring-1 ring-neutral-200 md:p-8">
+        <section className="site-section grid gap-6">
           <div>
-            <h1 className="m-0 text-3xl font-black leading-tight sm:text-4xl">{title}</h1>
-            <p className="m-0 mt-3 text-sm font-semibold leading-6 text-neutral-600">{lead}</p>
+            <h1 className="m-0 text-3xl font-black leading-tight text-[#061a3a] sm:text-4xl">{title}</h1>
+            <p className="m-0 mt-4 text-sm font-bold leading-8 text-slate-600">{lead}</p>
           </div>
-          <div className="grid gap-4 text-sm leading-7 text-neutral-700">{children}</div>
+          <div className="grid gap-5 text-sm font-semibold leading-8 text-slate-700">{children}</div>
         </section>
       </div>
+      <SiteFooter />
     </main>
   );
 }
 
 export function LegalTable({ rows }: { rows: Array<[string, string]> }) {
   return (
-    <dl className="grid overflow-hidden rounded-lg border border-neutral-200">
+    <dl className="grid overflow-hidden rounded-2xl border border-blue-100 bg-white">
       {rows.map(([label, value]) => (
-        <div key={label} className="grid gap-1 border-b border-neutral-200 p-3 last:border-b-0 sm:grid-cols-[12rem_1fr]">
-          <dt className="font-black text-neutral-950">{label}</dt>
-          <dd className="m-0 whitespace-pre-wrap font-semibold text-neutral-700">{value}</dd>
+        <div key={label} className="grid gap-2 border-b border-blue-100 p-4 last:border-b-0 sm:grid-cols-[12rem_1fr]">
+          <dt className="font-black text-[#061a3a]">{label}</dt>
+          <dd className="m-0 whitespace-pre-wrap font-semibold text-slate-700">{value}</dd>
         </div>
       ))}
     </dl>
   );
 }
-

@@ -6,6 +6,8 @@ import { getStripe } from "../../../lib/server/stripe";
 
 export const runtime = "nodejs";
 
+const activeStatuses = ["active", "trialing"];
+
 function planFromPriceId(priceId: string | null | undefined) {
   const entries = [
     ["light", process.env.STRIPE_PRICE_LIGHT],
@@ -56,6 +58,34 @@ async function upsertSubscription(subscription: Stripe.Subscription) {
   });
 }
 
+async function findActivePaidSubscription(stripe: Stripe, customerId: string, ignoredSubscriptionId?: string) {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+    limit: 100
+  });
+
+  return subscriptions.data.find((subscription) => {
+    if (subscription.id === ignoredSubscriptionId) return false;
+    const item = subscription.items.data[0];
+    const planId = planFromPriceId(item?.price.id);
+    return activeStatuses.includes(subscription.status) && isPaidPlanId(planId);
+  });
+}
+
+async function upsertSubscriptionWithCustomerCheck(stripe: Stripe, subscription: Stripe.Subscription) {
+  if (subscription.status === "canceled") {
+    const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+    const remainingSubscription = await findActivePaidSubscription(stripe, customerId, subscription.id);
+    if (remainingSubscription) {
+      await upsertSubscription(remainingSubscription);
+      return;
+    }
+  }
+
+  await upsertSubscription(subscription);
+}
+
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -77,14 +107,14 @@ export async function POST(request: NextRequest) {
   }
 
   if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-    await upsertSubscription(event.data.object as Stripe.Subscription);
+    await upsertSubscriptionWithCustomerCheck(stripe, event.data.object as Stripe.Subscription);
   }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     if (typeof session.subscription === "string") {
       const subscription = await stripe.subscriptions.retrieve(session.subscription);
-      await upsertSubscription(subscription);
+      await upsertSubscriptionWithCustomerCheck(stripe, subscription);
     }
   }
 

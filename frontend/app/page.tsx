@@ -23,6 +23,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect } from "react";
+import { AppMoveCta, AuthHeaderActions } from "./components/AuthHeaderActions";
 
 const appName = "route-snap";
 
@@ -221,6 +222,7 @@ export default function HomePage() {
           </Link>
 
           <nav className="hidden items-center gap-10 text-sm font-black text-[#061a3a] lg:flex" aria-label="Route Snap">
+            <Link href="/?landing=1">トップ</Link>
             <a href="#features">機能</a>
             <a href="#steps">使い方</a>
             <Link href="/pricing">料金</Link>
@@ -229,10 +231,11 @@ export default function HomePage() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link className="hidden min-h-10 items-center justify-center rounded-lg border border-blue-100 bg-white px-5 text-sm font-black text-[#061a3a] shadow-sm transition hover:border-blue-300 sm:inline-flex" href="/login?next=/app">
+            <AuthHeaderActions />
+            <Link className="hidden" href="/login?next=/app">
               ログイン
             </Link>
-            <Link className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700" href="/app">
+            <Link className="hidden" href="/app">
               無料で始める
             </Link>
             <button className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-white lg:hidden" type="button" aria-label="メニュー">
@@ -256,10 +259,10 @@ export default function HomePage() {
               <p className="m-0 text-lg font-bold leading-8 text-[#173052] sm:text-xl">最適なルートで、配送をもっとスマートに。</p>
             </div>
             <div className="grid w-fit gap-3">
-              <Link className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-blue-600 px-10 text-base font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-blue-700 active:scale-[0.98]" href="/app">
+              <AppMoveCta className="inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-blue-600 px-10 text-base font-black text-white shadow-[0_18px_40px_rgba(37,99,235,0.28)] transition hover:-translate-y-0.5 hover:bg-blue-700 active:scale-[0.98]">
                 無料で始める
                 <ArrowRight size={18} aria-hidden="true" />
-              </Link>
+              </AppMoveCta>
               <p className="m-0 text-center text-xs font-bold text-slate-500">登録不要・すぐに使えます</p>
             </div>
           </div>
@@ -318,10 +321,10 @@ export default function HomePage() {
           <div className="grid content-center gap-5 p-8 sm:p-12">
             <h2 className="m-0 text-4xl font-black leading-tight">今日の配送、<br />もっとラクにしませんか？</h2>
             <p className="m-0 text-lg font-bold leading-8 text-[#173052]">住所入力やルート整理を、AIでまとめて効率化。</p>
-            <Link className="inline-flex min-h-14 w-fit items-center justify-center gap-2 rounded-lg bg-blue-600 px-10 text-base font-black text-white shadow-sm transition hover:bg-blue-700" href="/app">
+            <AppMoveCta className="inline-flex min-h-14 w-fit items-center justify-center gap-2 rounded-lg bg-blue-600 px-10 text-base font-black text-white shadow-sm transition hover:bg-blue-700">
               無料で始める
               <ArrowRight size={18} aria-hidden="true" />
-            </Link>
+            </AppMoveCta>
           </div>
           <div className="relative min-h-72 overflow-hidden">
             <Image className="object-cover" src="/image/site/top/cta-01.png" alt="" fill sizes="(min-width: 1024px) 55vw, 100vw" />
@@ -386,10 +389,10 @@ export default function HomePage() {
           <div className="grid content-center gap-5 p-8 sm:p-12">
             <h2 className="m-0 text-4xl font-black leading-tight">毎日の住所入力、まだ手でやりますか？</h2>
             <p className="m-0 text-lg font-bold leading-8 text-blue-50">route-snapなら、撮るだけでルート整理。配送・営業・訪問業務を、もっとスマートに。</p>
-            <Link className="inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded-lg bg-white px-10 text-sm font-black text-blue-700 transition hover:bg-blue-50" href="/app">
+            <AppMoveCta className="inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded-lg bg-white px-10 text-sm font-black text-blue-700 transition hover:bg-blue-50">
               無料で始める
               <ArrowRight size={17} aria-hidden="true" />
-            </Link>
+            </AppMoveCta>
           </div>
           <div className="relative min-h-72 overflow-hidden bg-blue-600/40">
             <Image className="object-cover" src="/image/site/top/cta-02.png" alt="" fill sizes="(min-width: 1024px) 46vw, 100vw" />

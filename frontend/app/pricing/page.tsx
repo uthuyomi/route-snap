@@ -1,10 +1,11 @@
 "use client";
 
+import { createClient } from "@supabase/supabase-js";
 import { ArrowRight, BriefcaseBusiness, Check, CreditCard, FileText, Image as ImageIcon, MapPinned, MonitorDown, Route, ShieldCheck, Smartphone, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { AppHeader, AppLocale } from "../components/AppHeader";
-import { LegalFooter } from "../components/LegalFooter";
+import { useMemo, useState } from "react";
+import { AppLocale } from "../components/AppHeader";
+import { SiteFooter, SiteHeader } from "../components/SiteChrome";
 import { usePreferredLocale } from "../lib/locale";
 import { PlanId } from "../lib/plans";
 
@@ -128,9 +129,16 @@ function formatNumber(value: number, locale: AppLocale) {
 }
 
 export default function PricingPage() {
-  const [locale, setLocale] = usePreferredLocale();
+  const [locale] = usePreferredLocale();
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
+  const [checkoutError, setCheckoutError] = useState("");
   const t = messages[locale];
+  const supabase = useMemo(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+    return createClient(supabaseUrl, supabaseAnonKey);
+  }, []);
 
   const plans = [
     { id: "free" as const, name: t.free, price: 0, imageOcr: 5, fileStops: 30, routeRuns: 3, fit: t.freeFit, usage: t.freeUsage, highlighted: false },
@@ -154,20 +162,23 @@ export default function PricingPage() {
   ];
 
   async function choosePlan(planId: PlanId) {
+    setCheckoutError("");
     if (planId === "free") {
       window.location.assign("/app");
       return;
     }
 
     setLoadingPlan(planId);
+    const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
     const response = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: {
-        "content-type": "application/json"
+        "content-type": "application/json",
+        ...(data.session?.access_token ? { authorization: `Bearer ${data.session.access_token}` } : {})
       },
       body: JSON.stringify({ planId })
     });
-    const payload = (await response.json()) as { url?: string; detail?: string };
+    const payload = (await response.json().catch(() => ({}))) as { url?: string; detail?: string };
     setLoadingPlan(null);
 
     if (response.status === 401) {
@@ -176,59 +187,61 @@ export default function PricingPage() {
     }
     if (response.ok && payload.url) {
       window.location.assign(payload.url);
+      return;
     }
+    setCheckoutError(payload.detail ?? "決済画面を開けませんでした。時間をおいてもう一度お試しください。");
   }
 
   return (
-    <main className="min-h-svh app-surface px-4 py-4 sm:px-6 lg:py-8">
-      <div className="mx-auto grid w-full max-w-7xl gap-5">
-        <AppHeader locale={locale} currentPage="pricing" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
+    <main className="site-page">
+      <SiteHeader />
+      <div className="site-wrap">
 
-        <section className="grid gap-5 rounded-lg bg-white/90 p-5 shadow-sm ring-1 ring-neutral-200/80 md:p-7 lg:grid-cols-[1fr_0.72fr] lg:items-end">
+        <section className="site-section grid gap-6 lg:grid-cols-[1fr_0.72fr] lg:items-end">
           <div className="grid gap-4">
-            <p className="app-eyebrow">
+            <p className="site-kicker">
               <CreditCard size={14} aria-hidden="true" />
               <span className="ml-1">{t.eyebrow}</span>
             </p>
-            <div className="grid gap-3">
-              <h1 className="m-0 max-w-4xl text-4xl font-black leading-tight text-neutral-950 sm:text-5xl">{t.title}</h1>
-              <p className="m-0 max-w-3xl text-base font-semibold leading-7 text-neutral-600 sm:text-lg">{t.lead}</p>
+            <div className="grid gap-4">
+              <h1 className="site-title max-w-4xl">{t.title}</h1>
+              <p className="site-lead">{t.lead}</p>
             </div>
           </div>
-          <div className="grid gap-3 rounded-lg bg-emerald-950 p-4 text-white shadow-sm">
+          <div className="grid gap-3 rounded-2xl bg-blue-700 p-5 text-white shadow-sm">
             <div className="flex items-center gap-2 text-sm font-black">
               <ShieldCheck size={18} aria-hidden="true" />
               <span>{t.modelNoteTitle}</span>
             </div>
-            <p className="m-0 text-sm font-semibold leading-6 text-emerald-50">{t.modelNote}</p>
+            <p className="m-0 text-sm font-bold leading-7 text-blue-50">{t.modelNote}</p>
           </div>
         </section>
 
-        <section className="grid gap-3 lg:grid-cols-5">
+        <section className="grid gap-4 lg:grid-cols-5">
           {plans.map((plan) => (
             <article
               key={plan.name}
               className={[
-                "relative grid gap-4 rounded-lg border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
-                plan.highlighted ? "border-emerald-800 bg-white shadow-[0_18px_50px_rgba(6,78,59,0.18)] ring-2 ring-emerald-800" : "border-neutral-200/80 bg-white/90"
+                "relative grid gap-5 rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md",
+                plan.highlighted ? "border-blue-600 bg-white shadow-[0_18px_50px_rgba(37,99,235,0.18)] ring-2 ring-blue-600" : "border-blue-100 bg-white"
               ].join(" ")}
             >
               {plan.highlighted ? (
-                <div className="absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-lg bg-emerald-900 px-2 text-[11px] font-black text-white">
+                <div className="absolute right-3 top-3 inline-flex h-7 items-center gap-1 rounded-lg bg-blue-600 px-2 text-[11px] font-black text-white">
                   <Sparkles size={13} aria-hidden="true" />
                   {t.popular}
                 </div>
               ) : null}
 
               <div className="grid gap-2 pr-24 lg:pr-0">
-                <h2 className="m-0 text-xl font-black text-neutral-950">{plan.name}</h2>
-                <p className="m-0 text-sm font-black leading-5 text-neutral-700">{plan.fit}</p>
-                <p className="m-0 rounded-lg bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-900 ring-1 ring-emerald-100">{plan.highlighted ? t.popularReason : plan.usage}</p>
+                <h2 className="m-0 text-xl font-black text-[#061a3a]">{plan.name}</h2>
+                <p className="m-0 text-sm font-black leading-6 text-slate-700">{plan.fit}</p>
+                <p className="m-0 rounded-lg bg-blue-50 px-2 py-1 text-xs font-black text-blue-700 ring-1 ring-blue-100">{plan.highlighted ? t.popularReason : plan.usage}</p>
               </div>
 
               <div className="grid gap-1">
                 <div className="flex items-end gap-1">
-                  <span className="text-4xl font-black tracking-normal text-neutral-950">{formatNumber(plan.price, locale)}</span>
+                  <span className="text-4xl font-black tracking-normal text-[#061a3a]">{formatNumber(plan.price, locale)}</span>
                   <span className="pb-1 text-sm font-black text-neutral-600">{t.yen}/{t.month}</span>
                 </div>
                 <p className="m-0 text-xs font-bold text-neutral-500">{t.tax}</p>
@@ -250,7 +263,7 @@ export default function PricingPage() {
               </div>
 
               <button
-                className={plan.highlighted ? "primary-action hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(6,78,59,0.28)]" : "secondary-action hover:-translate-y-0.5 hover:shadow-md"}
+                className={plan.highlighted ? "site-primary hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(37,99,235,0.28)]" : "site-secondary hover:-translate-y-0.5 hover:shadow-md"}
                 type="button"
                 onClick={() => choosePlan(plan.id)}
                 disabled={loadingPlan === plan.id}
@@ -262,8 +275,14 @@ export default function PricingPage() {
           ))}
         </section>
 
+        {checkoutError ? (
+          <div className="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold leading-7 text-red-700">
+            {checkoutError}
+          </div>
+        ) : null}
+
         <section className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
-          <div className="grid gap-4 rounded-lg bg-white/90 p-5 shadow-sm ring-1 ring-neutral-200/80">
+          <div className="site-section grid gap-4">
             <div className="flex items-center gap-2">
               <BriefcaseBusiness size={20} aria-hidden="true" />
               <h2 className="m-0 text-2xl font-black">{t.includedTitle}</h2>
@@ -271,27 +290,27 @@ export default function PricingPage() {
             <div className="grid gap-2">
               {included.map((item) => (
                 <div key={item} className="grid grid-cols-[2rem_1fr] items-center gap-2 rounded-lg bg-neutral-50 p-3 text-sm font-black text-neutral-800">
-                  <Check className="text-emerald-700" size={18} aria-hidden="true" />
+                  <Check className="text-blue-600" size={18} aria-hidden="true" />
                   <span>{item}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-4 rounded-lg bg-[#fff7d6] p-5 shadow-sm">
+          <div className="grid gap-4 rounded-2xl bg-[#f4f9ff] p-6 shadow-sm">
             <div className="flex items-center gap-2">
               <Users size={20} aria-hidden="true" />
               <h2 className="m-0 text-2xl font-black">{t.compareTitle}</h2>
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               {countRules.map((rule) => (
-                <div key={rule.title} className="grid gap-3 rounded-lg bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                  <span className="grid h-11 w-11 place-items-center rounded-lg bg-emerald-900 text-white">
+                <div key={rule.title} className="site-card grid gap-3">
+                  <span className="grid h-11 w-11 place-items-center rounded-lg bg-blue-600 text-white">
                     <rule.icon size={20} aria-hidden="true" />
                   </span>
                   <div>
                     <h3 className="m-0 text-base font-black text-neutral-950">{rule.title}</h3>
-                    <p className="m-0 mt-2 text-sm font-semibold leading-6 text-neutral-600">{rule.text}</p>
+                    <p className="m-0 mt-2 text-sm font-bold leading-7 text-slate-600">{rule.text}</p>
                   </div>
                 </div>
               ))}
@@ -304,34 +323,34 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <section className="grid gap-4 rounded-lg bg-emerald-950 p-5 text-white shadow-sm md:grid-cols-[1fr_auto] md:items-center">
+        <section className="grid gap-4 rounded-2xl bg-blue-700 p-6 text-white shadow-sm md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <h2 className="m-0 text-2xl font-black">{t.ctaTitle}</h2>
-            <p className="m-0 mt-2 max-w-3xl text-sm font-semibold leading-6 text-emerald-50">{t.ctaText}</p>
+            <p className="m-0 mt-2 max-w-3xl text-sm font-bold leading-7 text-blue-50">{t.ctaText}</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-black text-neutral-950 transition hover:-translate-y-0.5 hover:bg-neutral-100 hover:shadow-md active:scale-[0.98]" href="/single">
+            <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-black text-blue-700 transition hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-md active:scale-[0.98]" href="/app">
               <ImageIcon size={18} aria-hidden="true" />
               <span>{t.ctaPrimary}</span>
             </Link>
-            <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/30 px-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-md active:scale-[0.98]" href="/batch">
+            <Link className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-white/30 px-4 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-white/10 hover:shadow-md active:scale-[0.98]" href="/app">
               <Route size={18} aria-hidden="true" />
               <span>{t.ctaSecondary}</span>
             </Link>
           </div>
         </section>
 
-        <section className="grid gap-2 rounded-lg bg-white/80 p-4 shadow-sm ring-1 ring-neutral-200/80 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-2 rounded-2xl bg-[#f7fbff] p-5 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
           {trustItems.map((item) => (
             <div key={item.text} className="flex min-h-11 items-center gap-2 rounded-lg bg-neutral-50 px-3 text-sm font-black text-neutral-800">
-              <item.icon className="text-emerald-700" size={18} aria-hidden="true" />
+              <item.icon className="text-blue-600" size={18} aria-hidden="true" />
               <span>{item.text}</span>
             </div>
           ))}
         </section>
 
-        <LegalFooter locale={locale} />
       </div>
+      <SiteFooter />
     </main>
   );
 }
