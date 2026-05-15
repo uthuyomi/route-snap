@@ -203,13 +203,24 @@ function extractTextStops(fileName: string, text: string): BatchStop[] {
 
 function buttonClass(active = true) {
   return [
-    "secondary-action",
+    "secondary-action aspect-square min-h-12 px-0 sm:min-h-14",
     active ? "" : "border-neutral-200 bg-neutral-100 text-neutral-400"
   ].join(" ");
 }
 
 function primaryButtonClass() {
-  return "primary-action";
+  return "primary-action min-h-14";
+}
+
+function iconChoiceClass() {
+  return "choice-tile aspect-square min-h-28";
+}
+
+function routeModeButtonClass(active: boolean) {
+  return [
+    "inline-flex aspect-square min-h-14 items-center justify-center rounded-lg border text-sm font-bold transition active:scale-[0.98] disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-neutral-400",
+    active ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_24px_rgba(6,78,59,0.20)]" : "border-neutral-200 bg-white/85 text-neutral-800 hover:border-emerald-500 hover:bg-white"
+  ].join(" ");
 }
 
 async function runLimited<T>(items: T[], limit: number, task: (item: T) => Promise<void>) {
@@ -574,10 +585,9 @@ export default function BatchRoutePage() {
               ) : (
                 <div className="media-empty min-h-72">
                   <div className="grid w-full max-w-sm gap-3">
-                    <p className="m-0 text-center text-sm font-black text-neutral-700">{t.imagePreviewEmpty}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <button
-                        className="choice-tile"
+                        className={iconChoiceClass()}
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
                         aria-label={t.importFiles}
@@ -585,10 +595,10 @@ export default function BatchRoutePage() {
                         disabled={isReading}
                       >
                         {isReading ? <Loader2 className="animate-spin" size={24} aria-hidden="true" /> : <Upload className="h-8 w-8" aria-hidden="true" />}
-                        <span>{isReading ? t.readingImage : t.importFiles}</span>
+                        <span className="sr-only">{isReading ? t.readingImage : t.importFiles}</span>
                       </button>
                       <button
-                        className="choice-tile"
+                        className={iconChoiceClass()}
                         type="button"
                         onClick={() => cameraInputRef.current?.click()}
                         aria-label={t.cameraCapture}
@@ -596,7 +606,7 @@ export default function BatchRoutePage() {
                         disabled={isReading}
                       >
                         {isReading ? <Loader2 className="animate-spin" size={24} aria-hidden="true" /> : <Camera className="h-8 w-8" aria-hidden="true" />}
-                        <span>{isReading ? t.readingImage : t.cameraCapture}</span>
+                        <span className="sr-only">{isReading ? t.readingImage : t.cameraCapture}</span>
                       </button>
                     </div>
                   </div>
@@ -610,11 +620,11 @@ export default function BatchRoutePage() {
               <div className="grid grid-cols-2 gap-2">
                 <button className={buttonClass()} type="button" onClick={() => fileInputRef.current?.click()} disabled={isReading} aria-label={t.importFiles} title={t.importFiles}>
                   {isReading ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Upload size={18} aria-hidden="true" />}
-                  <span>{t.importFiles}</span>
+                  <span className="sr-only">{t.importFiles}</span>
                 </button>
                 <button className={buttonClass()} type="button" onClick={() => cameraInputRef.current?.click()} disabled={isReading} aria-label={t.cameraCapture} title={t.cameraCapture}>
                   {isReading ? <Loader2 className="animate-spin" size={18} aria-hidden="true" /> : <Camera size={18} aria-hidden="true" />}
-                  <span>{t.cameraCapture}</span>
+                  <span className="sr-only">{t.cameraCapture}</span>
                 </button>
               </div>
 
@@ -689,7 +699,7 @@ export default function BatchRoutePage() {
                     </div>
                     <button className={buttonClass()} type="button" onClick={() => removeStop(stop.id)} aria-label={t.delete} title={t.delete}>
                       <Trash2 size={18} aria-hidden="true" />
-                      <span className="hidden sm:inline">{t.delete}</span>
+                      <span className="sr-only">{t.delete}</span>
                     </button>
                   </div>
                 ))
@@ -706,25 +716,19 @@ export default function BatchRoutePage() {
               <p className="m-0 mt-1 text-sm font-semibold leading-5 text-neutral-500">{t.routeHelp}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-[auto_auto_1fr] gap-2">
               <button
-                className={[
-                  "inline-flex min-h-14 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98]",
-                  routeMode === "file" ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_24px_rgba(6,78,59,0.20)]" : "border-neutral-200 bg-white/85 text-neutral-800 hover:border-emerald-500 hover:bg-white"
-                ].join(" ")}
+                className={routeModeButtonClass(routeMode === "file")}
                 type="button"
                 onClick={useFileOrder}
                 aria-label={t.fileOrder}
                 title={t.fileOrder}
               >
                 <ArrowUpDown size={19} aria-hidden="true" />
-                <span>{t.fileOrder}</span>
+                <span className="sr-only">{t.fileOrder}</span>
               </button>
               <button
-                className={[
-                  "inline-flex min-h-14 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-bold transition active:scale-[0.98] disabled:border-neutral-200 disabled:bg-neutral-100 disabled:text-neutral-400",
-                  routeMode === "ai" ? "border-emerald-900 bg-emerald-900 text-white shadow-[0_10px_24px_rgba(6,78,59,0.20)]" : "border-neutral-200 bg-white/85 text-neutral-800 hover:border-emerald-500 hover:bg-white"
-                ].join(" ")}
+                className={routeModeButtonClass(routeMode === "ai")}
                 type="button"
                 onClick={optimizeRoute}
                 disabled={usableStops.length < 2 || isOptimizing}
@@ -732,14 +736,13 @@ export default function BatchRoutePage() {
                 title={t.aiOrder}
               >
                 {isOptimizing ? <Loader2 className="animate-spin" size={19} aria-hidden="true" /> : <Bot size={19} aria-hidden="true" />}
-                <span>{isOptimizing ? t.optimizing : t.aiOrder}</span>
+                <span className="sr-only">{isOptimizing ? t.optimizing : t.aiOrder}</span>
+              </button>
+              <button className={primaryButtonClass()} type="button" onClick={openMaps} disabled={!mapsUrl || isReading || isOptimizing} aria-label={t.openMaps} title={t.openMaps}>
+                <ExternalLink size={20} aria-hidden="true" />
+                <span className="sr-only">{t.openMaps}</span>
               </button>
             </div>
-
-            <button className={primaryButtonClass()} type="button" onClick={openMaps} disabled={!mapsUrl || isReading || isOptimizing}>
-              <ExternalLink size={20} aria-hidden="true" />
-              <span>{t.openMaps}</span>
-            </button>
 
             <div className="app-panel-muted grid gap-2 p-3">
               <div className="flex items-center justify-between gap-3">

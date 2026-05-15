@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 export type AppLocale = "ja" | "en";
-type AppPage = "home" | "single" | "batch" | "pricing";
+type AppPage = "home" | "app" | "single" | "batch" | "pricing";
 
 type AppHeaderProps = {
   locale: AppLocale;
@@ -17,7 +17,8 @@ type AppHeaderProps = {
 const labels = {
   ja: {
     subtitle: "住所を読み取り、そのままルートへ",
-    home: "トップ",
+    home: "紹介トップ",
+    app: "操作トップ",
     single: "住所を読み取る",
     batch: "訪問ルートを作成",
     pricing: "料金",
@@ -36,7 +37,8 @@ const labels = {
   },
   en: {
     subtitle: "Read addresses and turn them into routes",
-    home: "Home",
+    home: "Intro",
+    app: "App Home",
     single: "Address Reader",
     batch: "Route Planner",
     pricing: "Pricing",
@@ -95,7 +97,8 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
     return createClient(supabaseUrl, supabaseAnonKey);
   }, []);
   const menuNav = [
-    { href: "/", label: t.home },
+    { href: "/app", label: t.app, page: "app" },
+    { href: "/?landing=1", label: t.home, page: "home" },
     { href: "/pricing", label: t.pricing },
     { href: "/faq", label: t.faq },
     { href: "/contact", label: t.contact },
@@ -125,7 +128,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
 
   return (
     <header className="relative flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-300 bg-white p-3 shadow-sm">
-      <Link className="inline-flex min-w-0 items-center gap-3" href="/" aria-label="Route Snap">
+      <Link className="inline-flex min-w-0 items-center gap-3" href={currentPage === "home" ? "/" : "/app"} aria-label="Route Snap">
         <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-neutral-950 text-white shadow-sm">
           <MapPinned size={22} aria-hidden="true" />
         </span>
@@ -161,7 +164,7 @@ export function AppHeader({ locale, currentPage, onToggleLocale }: AppHeaderProp
               </Link>
             </div>
             {menuNav.map((item) => (
-              <Link key={item.href} className={menuItemClass(item.href === "/" && currentPage === "home")} href={item.href} onClick={() => setIsMenuOpen(false)}>
+              <Link key={item.href} className={menuItemClass("page" in item && item.page === currentPage)} href={item.href} onClick={() => setIsMenuOpen(false)}>
                 <span>{item.label}</span>
               </Link>
             ))}

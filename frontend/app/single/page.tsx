@@ -88,13 +88,17 @@ const messages = {
 
 function secondaryButtonClass(active = true) {
   return [
-    "secondary-action",
+    "secondary-action aspect-square min-h-12 px-0 sm:min-h-14",
     active ? "" : "border-neutral-200 bg-neutral-100 text-neutral-400"
   ].join(" ");
 }
 
 function primaryButtonClass() {
-  return "primary-action";
+  return "primary-action aspect-square min-h-14 px-0";
+}
+
+function iconChoiceClass() {
+  return "choice-tile aspect-square min-h-28";
 }
 
 export default function Home() {
@@ -197,9 +201,8 @@ export default function Home() {
                 <h1 className="app-heading mt-2">{t.capture}</h1>
                 <p className="app-help hidden sm:block">{t.captureHelp}</p>
               </div>
-              <span className="inline-flex h-9 shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 text-xs font-bold text-emerald-800" title={imageFile ? t.readyPhoto : t.noPhoto}>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-800" title={imageFile ? t.readyPhoto : t.noPhoto} aria-label={imageFile ? t.readyPhoto : t.noPhoto}>
                 {imageFile ? <Check size={16} aria-hidden="true" /> : <XCircle size={16} aria-hidden="true" />}
-                {imageFile ? t.readyPhoto : t.noPhoto}
               </span>
             </div>
 
@@ -209,15 +212,14 @@ export default function Home() {
               ) : (
                 <div className="media-empty">
                   <div className="grid w-full max-w-sm gap-3">
-                    <p className="m-0 text-center text-sm font-black text-neutral-700">{t.photoSource}</p>
                     <div className="grid grid-cols-2 gap-3">
-                      <button className="choice-tile" type="button" onClick={() => cameraInputRef.current?.click()}>
+                      <button className={iconChoiceClass()} type="button" onClick={() => cameraInputRef.current?.click()} aria-label={t.takePhoto} title={t.takePhoto}>
                         <Camera className="h-8 w-8" aria-hidden="true" />
-                        <span>{t.takePhoto}</span>
+                        <span className="sr-only">{t.takePhoto}</span>
                       </button>
-                      <button className="choice-tile" type="button" onClick={() => libraryInputRef.current?.click()}>
+                      <button className={iconChoiceClass()} type="button" onClick={() => libraryInputRef.current?.click()} aria-label={t.chooseImage} title={t.chooseImage}>
                         <ImagePlus className="h-8 w-8" aria-hidden="true" />
-                        <span>{t.chooseImage}</span>
+                        <span className="sr-only">{t.chooseImage}</span>
                       </button>
                     </div>
                   </div>
@@ -227,26 +229,24 @@ export default function Home() {
               <input ref={libraryInputRef} className="pointer-events-none absolute h-px w-px opacity-0" type="file" accept="image/*" onChange={onPickImage} />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid grid-cols-4 gap-2">
               <p className="sr-only">{t.resultTools}</p>
               <button className={primaryButtonClass()} type="button" onClick={analyzeImage} disabled={!imageFile || isLoading} aria-label={t.analyzeAria} title={t.analyzeAria}>
                 {isLoading ? <Loader2 className="animate-spin" size={22} aria-hidden="true" /> : <ScanText size={22} aria-hidden="true" />}
-                <span>{isLoading ? t.analyzing : t.analyze}</span>
+                <span className="sr-only">{isLoading ? t.analyzing : t.analyze}</span>
               </button>
-              <div className="grid grid-cols-3 gap-2">
-                <button className={secondaryButtonClass()} type="button" onClick={() => cameraInputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
-                  <Camera size={18} aria-hidden="true" />
-                  <span>{t.retake}</span>
-                </button>
-                <button className={secondaryButtonClass()} type="button" onClick={() => libraryInputRef.current?.click()} aria-label={t.libraryAria} title={t.libraryAria}>
-                  <ImagePlus size={18} aria-hidden="true" />
-                  <span>{t.chooseImage}</span>
-                </button>
-                <button className={secondaryButtonClass()} type="button" onClick={resetCapture} aria-label={t.resetAria} title={t.resetAria}>
-                  <RotateCcw size={19} aria-hidden="true" />
-                  <span>{t.reset}</span>
-                </button>
-              </div>
+              <button className={secondaryButtonClass()} type="button" onClick={() => cameraInputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
+                <Camera size={18} aria-hidden="true" />
+                <span className="sr-only">{t.retake}</span>
+              </button>
+              <button className={secondaryButtonClass()} type="button" onClick={() => libraryInputRef.current?.click()} aria-label={t.libraryAria} title={t.libraryAria}>
+                <ImagePlus size={18} aria-hidden="true" />
+                <span className="sr-only">{t.chooseImage}</span>
+              </button>
+              <button className={secondaryButtonClass()} type="button" onClick={resetCapture} aria-label={t.resetAria} title={t.resetAria}>
+                <RotateCcw size={19} aria-hidden="true" />
+                <span className="sr-only">{t.reset}</span>
+              </button>
             </div>
           </section>
 
@@ -272,15 +272,15 @@ export default function Home() {
               />
             </label>
 
-            <button className={primaryButtonClass()} type="button" onClick={openMaps} disabled={!activeAddress} aria-label={t.mapsAria} title={t.mapsAria}>
+            <button className="primary-action min-h-14 px-4" type="button" onClick={openMaps} disabled={!activeAddress} aria-label={t.mapsAria} title={t.mapsAria}>
               <ExternalLink size={20} aria-hidden="true" />
-              <span>{t.openMaps}</span>
+              <span className="sr-only">{t.openMaps}</span>
             </button>
 
             <div className="grid grid-cols-2 gap-2">
               <div className="metric-card grid min-h-14 place-items-center gap-1 px-2 text-xs font-bold text-neutral-600 sm:min-h-16" title={t.confidence}>
                 <span className="text-sm tabular-nums text-neutral-950">{result ? `${Math.round(result.confidence * 100)}%` : "--"}</span>
-                <span>{t.confidence}</span>
+                <span className="sr-only">{t.confidence}</span>
               </div>
 
               <div
@@ -291,7 +291,7 @@ export default function Home() {
                 title={error ?? t.status}
               >
                 {error ? <XCircle size={20} aria-hidden="true" /> : <Check size={20} aria-hidden="true" />}
-                <span>{error ? t.needsCheck : t.ready}</span>
+                <span className="sr-only">{error ? t.needsCheck : t.ready}</span>
               </div>
             </div>
 

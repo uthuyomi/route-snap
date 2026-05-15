@@ -155,7 +155,7 @@ export default function PricingPage() {
 
   async function choosePlan(planId: PlanId) {
     if (planId === "free") {
-      window.location.assign("/single");
+      window.location.assign("/app");
       return;
     }
 

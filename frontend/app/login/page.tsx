@@ -53,7 +53,7 @@ function LoginContent() {
   }, []);
 
   function redirectTo() {
-    const next = searchParams.get("next") || "/account";
+    const next = searchParams.get("next") || "/app";
     return `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
   }
 
