@@ -628,14 +628,15 @@ export default function BatchRoutePage() {
     }
   }
 
-  function openMaps() {
+  async function openMaps() {
     if (!mapsUrl) return;
 
-    window.location.assign(buildRouteMapsUrl(routeAddresses));
+    const origin = await getCurrentPosition();
+    window.location.assign(buildRouteMapsUrl(routeAddresses, origin ?? undefined));
   }
 
   return (
-    <main className="app-surface min-h-svh px-4 py-4 sm:px-6 lg:py-8">
+    <main className="app-surface min-h-svh px-2 py-2 sm:px-6 sm:py-4 lg:py-8">
       <div className="mx-auto grid w-full max-w-6xl gap-4">
         <AppHeader locale={locale} currentPage="batch" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
 

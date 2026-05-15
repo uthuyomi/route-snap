@@ -196,8 +196,8 @@ export default function Home() {
   }
 
   return (
-    <main className="app-surface h-svh overflow-hidden px-2 py-2 sm:px-3 lg:h-auto lg:min-h-svh lg:overflow-visible lg:px-6 lg:py-8">
-      <div className="mx-auto grid h-full w-full max-w-6xl grid-rows-[auto_1fr] gap-2 lg:h-auto lg:gap-4">
+    <main className="app-surface min-h-svh px-2 py-2 sm:px-3 lg:px-6 lg:py-8">
+      <div className="mx-auto grid w-full max-w-6xl gap-2 lg:gap-4">
         <AppHeader locale={locale} currentPage="single" onToggleLocale={() => setLocale(locale === "ja" ? "en" : "ja")} />
 
         <div className="grid min-h-0 gap-2 md:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)] lg:gap-4 lg:items-start">

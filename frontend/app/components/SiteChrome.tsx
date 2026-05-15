@@ -1,6 +1,7 @@
-import { MapPinned, Menu } from "lucide-react";
+import { MapPinned } from "lucide-react";
 import Link from "next/link";
 import { AuthHeaderActions } from "./AuthHeaderActions";
+import { SiteMobileMenu } from "./SiteMobileMenu";
 
 const appName = "route-snap";
 
@@ -18,7 +19,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 sm:px-8">
         <Link className="inline-flex items-center gap-3" href="/?landing=1" aria-label={appName}>
           <LogoMark />
-          <span className="text-2xl font-black tracking-normal text-[#061a3a]">{appName}</span>
+          <span className="text-xl font-black tracking-normal text-[#061a3a] sm:text-2xl">{appName}</span>
         </Link>
 
         <nav className="hidden items-center gap-10 text-sm font-black text-[#061a3a] lg:flex" aria-label="Route Snap">
@@ -31,9 +32,7 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-3">
           <AuthHeaderActions />
-          <button className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-white lg:hidden" type="button" aria-label="メニュー">
-            <Menu size={20} aria-hidden="true" />
-          </button>
+          <SiteMobileMenu />
         </div>
       </div>
     </header>

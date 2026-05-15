@@ -10,7 +10,6 @@ import {
   FileText,
   HeartPulse,
   MapPinned,
-  Menu,
   Route,
   Sparkles,
   Truck,
@@ -21,6 +20,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AppMoveCta, AuthHeaderActions } from "./components/AuthHeaderActions";
 import { PwaInstallSection } from "./components/PwaInstallSection";
+import { SiteMobileMenu } from "./components/SiteMobileMenu";
 
 const appName = "route-snap";
 
@@ -222,7 +222,7 @@ export default function HomePage() {
         <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 sm:px-8">
           <Link className="inline-flex items-center gap-3" href="/?landing=1" aria-label={appName}>
             <LogoMark />
-            <span className="text-2xl font-black tracking-normal">{appName}</span>
+            <span className="text-xl font-black tracking-normal sm:text-2xl">{appName}</span>
           </Link>
 
           <nav className="hidden items-center gap-10 text-sm font-black text-[#061a3a] lg:flex" aria-label="Route Snap">
@@ -241,9 +241,7 @@ export default function HomePage() {
             <Link className="hidden" href="/app">
               無料で始める
             </Link>
-            <button className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-white lg:hidden" type="button" aria-label="メニュー">
-              <Menu size={20} aria-hidden="true" />
-            </button>
+            <SiteMobileMenu />
           </div>
         </div>
       </header>
@@ -252,10 +250,10 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(239,248,255,0.96)_0%,rgba(239,248,255,0.84)_33%,rgba(239,248,255,0.18)_64%,rgba(239,248,255,0)_100%)]" />
         <div className="absolute inset-0 bg-cover bg-[62%_center] bg-no-repeat" style={{ backgroundImage: "url('/image/site/top/hero.png')" }} />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.68)_35%,rgba(255,255,255,0)_68%)]" />
-        <div className="relative mx-auto grid min-h-[34rem] w-full max-w-7xl content-center px-5 py-16 sm:min-h-[40rem] sm:px-8">
+        <div className="relative mx-auto grid min-h-[31rem] w-full max-w-7xl content-center px-5 py-14 sm:min-h-[40rem] sm:px-8 sm:py-16">
           <div className="grid max-w-2xl gap-8">
             <div className="grid gap-6">
-              <h1 className="m-0 text-5xl font-black leading-[1.28] tracking-normal text-[#061a3a] sm:text-6xl lg:text-7xl">
+              <h1 className="m-0 text-4xl font-black leading-[1.28] tracking-normal text-[#061a3a] sm:text-6xl lg:text-7xl">
                 そのルートが、<br />
                 ビジネスを変える。
               </h1>
