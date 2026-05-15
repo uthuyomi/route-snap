@@ -111,6 +111,7 @@ function iconChoiceClass() {
 export default function Home() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const libraryInputRef = useRef<HTMLInputElement | null>(null);
+  const preparedImageRef = useRef<Promise<File> | null>(null);
   const [locale, setLocale] = usePreferredLocale();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -125,6 +126,7 @@ export default function Home() {
   function resetCapture() {
     setImageFile(null);
     setPreviewUrl(null);
+    preparedImageRef.current = null;
     setResult(null);
     setManualAddress("");
     setError(null);
@@ -141,6 +143,10 @@ export default function Home() {
     }
 
     setImageFile(file);
+    preparedImageRef.current = prepareImageForUpload(file, {
+      maxImageEdge: 1400,
+      jpegQuality: 0.8
+    });
     setPreviewUrl(URL.createObjectURL(file));
     setResult(null);
     setManualAddress("");
@@ -154,7 +160,10 @@ export default function Home() {
     setError(null);
 
     try {
-      const uploadFile = await prepareImageForUpload(imageFile);
+      const uploadFile = await (preparedImageRef.current ?? prepareImageForUpload(imageFile, {
+        maxImageEdge: 1400,
+        jpegQuality: 0.8
+      }));
       const formData = new FormData();
       formData.append("image", uploadFile);
       formData.append("locale", locale);

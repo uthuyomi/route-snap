@@ -284,6 +284,7 @@ async def parse_address(
 
     client = get_openai_client(api_key)
     model = os.getenv("OPENAI_MODEL", "gpt-5.5")
+    image_detail = os.getenv("OPENAI_SINGLE_IMAGE_DETAIL", "auto")
 
     try:
         response = await client.responses.create(
@@ -293,7 +294,7 @@ async def parse_address(
                     "role": "user",
                     "content": [
                         {"type": "input_text", "text": build_prompt(active_locale, notes)},
-                        {"type": "input_image", "image_url": data_url, "detail": "high"},
+                        {"type": "input_image", "image_url": data_url, "detail": image_detail},
                     ],
                 }
             ],
