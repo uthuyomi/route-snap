@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const contentType = response.headers.get("content-type") ?? "application/json";
     const responseBody = await response.text();
 
-    if (response.ok) {
+    if (response.ok && !quota.unlimited) {
       await recordUsage(quota.subject, "routeRuns", 1, quota.periodKey);
     }
 

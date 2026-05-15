@@ -10,6 +10,7 @@ type UsageSubject = {
   type: "user" | "anonymous";
   id: string;
   userId: string | null;
+  email: string | null;
 };
 
 type UsageRecord = {
@@ -25,6 +26,7 @@ type QuotaCheck = {
   subject?: UsageSubject;
   planId?: PlanId;
   periodKey?: string;
+  unlimited?: boolean;
 };
 
 function periodKey(date = new Date()) {
@@ -37,6 +39,17 @@ function usageColumn(meter: MeterKey) {
   return "route_runs_used";
 }
 
+function isUnlimitedEmail(email: string | null | undefined) {
+  if (!email) return false;
+
+  const allowedEmails = (process.env.ROUTE_SNAP_UNLIMITED_EMAILS ?? "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+
+  return allowedEmails.includes(email.trim().toLowerCase());
+}
+
 async function getUsageSubject(): Promise<UsageSubject> {
   const supabase = await createSupabaseServerClient();
   const { data } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
@@ -45,7 +58,8 @@ async function getUsageSubject(): Promise<UsageSubject> {
     return {
       type: "user",
       id: data.user.id,
-      userId: data.user.id
+      userId: data.user.id,
+      email: data.user.email ?? null
     };
   }
 
@@ -66,7 +80,8 @@ async function getUsageSubject(): Promise<UsageSubject> {
   return {
     type: "anonymous",
     id: anonymousId,
-    userId: null
+    userId: null,
+    email: null
   };
 }
 
@@ -138,8 +153,21 @@ export async function checkQuota(meter: MeterKey, amount = 1): Promise<QuotaChec
   }
 
   const subject = await getUsageSubject();
-  const planId = await getPlanId(subject.userId);
   const activePeriodKey = periodKey();
+
+  if (isUnlimitedEmail(subject.email)) {
+    return {
+      allowed: true,
+      status: 200,
+      detail: "ok",
+      subject,
+      planId: "business",
+      periodKey: activePeriodKey,
+      unlimited: true
+    };
+  }
+
+  const planId = await getPlanId(subject.userId);
   const usage = await getUsage(subject, activePeriodKey);
   const column = usageColumn(meter);
   const limit = getPlanLimit(planId, meter);

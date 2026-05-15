@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const responseContentType = response.headers.get("content-type") ?? "application/json";
     const body = await response.text();
 
-    if (response.ok) {
+    if (response.ok && !quota.unlimited) {
       await recordUsage(quota.subject, "imageOcr", 1, quota.periodKey);
     }
 

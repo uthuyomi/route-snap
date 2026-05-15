@@ -17,11 +17,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ detail: quota.detail }, { status: quota.status });
     }
 
-    await recordUsage(quota.subject, "fileStops", count, quota.periodKey);
+    if (!quota.unlimited) {
+      await recordUsage(quota.subject, "fileStops", count, quota.periodKey);
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Usage request failed";
     return NextResponse.json({ detail: message }, { status: 400 });
   }
 }
-
