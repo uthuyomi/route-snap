@@ -27,7 +27,6 @@ export function SiteHeader() {
           <Link href="/?landing=1#steps">使い方</Link>
           <Link href="/pricing">料金</Link>
           <Link href="/faq">よくある質問</Link>
-          <Link href="/?landing=1#cases">導入事例</Link>
         </nav>
 
         <div className="flex items-center gap-3">

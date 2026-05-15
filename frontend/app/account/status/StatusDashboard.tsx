@@ -1,6 +1,6 @@
 "use client";
 
-import { CreditCard, Languages } from "lucide-react";
+import { CreditCard, FileText, Image as ImageIcon, Languages, Route } from "lucide-react";
 import Link from "next/link";
 import { usePreferredLocale } from "../../lib/locale";
 import type { AppLocale } from "../../components/AppHeader";
@@ -9,11 +9,13 @@ type Meter = {
   key: string;
   labelJa: string;
   labelEn: string;
+  descriptionJa?: string;
+  descriptionEn?: string;
   used: number;
   limit: number;
 };
 
-type StatusDashboardProps = {
+export type StatusDashboardProps = {
   email: string | null;
   planNameJa: string;
   planNameEn: string;
@@ -43,6 +45,7 @@ const messages = {
     ja: "日本語",
     en: "English",
     billing: "支払いを管理",
+    featureTitle: "この機能は何か",
     note: "日別履歴は保存していないため、現在の月間使用量から月末までのペースを推定しています。",
   },
   en: {
@@ -62,6 +65,7 @@ const messages = {
     ja: "Japanese",
     en: "English",
     billing: "Manage billing",
+    featureTitle: "What each feature means",
     note: "Daily history is not stored yet, so the month-end pace is estimated from current monthly usage.",
   },
 } satisfies Record<AppLocale, Record<string, string>>;
@@ -72,6 +76,12 @@ function formatNumber(value: number, locale: AppLocale) {
 
 function unit(value: number, locale: AppLocale) {
   return locale === "ja" ? `${formatNumber(value, locale)} 回` : formatNumber(value, locale);
+}
+
+function meterIcon(key: string) {
+  if (key === "imageOcr") return ImageIcon;
+  if (key === "fileStops") return FileText;
+  return Route;
 }
 
 function pointsToString(points: Array<[number, number]>) {
@@ -184,6 +194,26 @@ export function StatusDashboard(props: StatusDashboardProps) {
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-blue-50">
                   <div className="h-full rounded-full bg-blue-600" style={{ width: `${percent}%` }} />
                 </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="grid gap-3">
+        <h2 className="m-0 text-2xl font-black text-[#061a3a]">{t.featureTitle}</h2>
+        <div className="grid gap-3 md:grid-cols-3">
+          {props.meters.map((meter) => {
+            const Icon = meterIcon(meter.key);
+            return (
+              <div key={meter.key} className="rounded-2xl border border-blue-100 bg-white p-4 shadow-sm">
+                <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-600 text-white">
+                  <Icon size={20} aria-hidden="true" />
+                </span>
+                <h3 className="m-0 mt-3 text-base font-black text-[#061a3a]">{locale === "ja" ? meter.labelJa : meter.labelEn}</h3>
+                <p className="m-0 mt-2 text-sm font-bold leading-7 text-slate-600">
+                  {locale === "ja" ? meter.descriptionJa : meter.descriptionEn}
+                </p>
               </div>
             );
           })}

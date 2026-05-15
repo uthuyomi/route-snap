@@ -5,6 +5,7 @@ import { ArrowRight, CreditCard, Globe2, LogIn, MapPinned, Route, ScanText, User
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppHeader, type AppLocale } from "../components/AppHeader";
+import { PwaInstallSection } from "../components/PwaInstallSection";
 import { usePreferredLocale } from "../lib/locale";
 
 const messages = {
@@ -82,7 +83,7 @@ export default function AppHomePage() {
     };
   }, [supabase]);
 
-  const accountHref = isLoggedIn ? "/account" : "/login?next=/app";
+  const accountHref = isLoggedIn ? "/account/status" : "/login?next=/app";
 
   return (
     <main className="app-surface min-h-svh px-3 py-3 sm:px-6 lg:py-8">
@@ -139,6 +140,8 @@ export default function AppHomePage() {
             <span className="sr-only">{t.siteTop}</span>
           </Link>
         </section>
+
+        <PwaInstallSection compact />
       </div>
     </main>
   );

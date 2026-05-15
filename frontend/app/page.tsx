@@ -7,23 +7,20 @@ import {
   Camera,
   CheckCircle2,
   ChevronDown,
-  ClipboardList,
   FileText,
   HeartPulse,
   MapPinned,
   Menu,
-  Navigation,
   Route,
-  ShieldCheck,
-  Smartphone,
   Sparkles,
   Truck,
   Wrench
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppMoveCta, AuthHeaderActions } from "./components/AuthHeaderActions";
+import { PwaInstallSection } from "./components/PwaInstallSection";
 
 const appName = "route-snap";
 
@@ -102,18 +99,23 @@ const useCases = [
   }
 ];
 
-const trustItems = [
-  { icon: Smartphone, title: "スマホ対応", text: "いつでもどこでも使える" },
-  { icon: Navigation, title: "Google Maps連携", text: "ワンタップですぐ開始" },
-  { icon: ClipboardList, title: "インストール不要", text: "ブラウザでそのまま使える" },
-  { icon: ShieldCheck, title: "無料プランあり", text: "まずは無料でお試し" }
-];
-
 const faqs = [
-  "どんな人におすすめですか？",
-  "料金プランはありますか？",
-  "Google Mapsと連携できますか？",
-  "スマホでも使えますか？"
+  {
+    question: "どんな人におすすめですか？",
+    answer: "配送、営業、訪問介護、点検など、複数の訪問先を毎回整理して移動する現場に向いています。住所入力とルート整理をまとめて短縮できます。"
+  },
+  {
+    question: "料金プランはありますか？",
+    answer: "無料プランから始められます。住所読み取り、訪問先一括登録、ルート整理の利用量に合わせて有料プランを選べます。"
+  },
+  {
+    question: "Google Mapsと連携できますか？",
+    answer: "はい。整理した住所やルートをGoogle Mapsで開けます。スマホでもPCでも、ナビ開始までの流れを短くできます。"
+  },
+  {
+    question: "スマホでも使えますか？",
+    answer: "はい。ブラウザで使えます。ホーム画面に追加すると、スマホでもPCでもアプリのようにすぐ起動できます。"
+  }
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -190,6 +192,8 @@ function LogoMark() {
 }
 
 export default function HomePage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("landing") === "1") return;
@@ -227,7 +231,6 @@ export default function HomePage() {
             <a href="#steps">使い方</a>
             <Link href="/pricing">料金</Link>
             <Link href="/faq">よくある質問</Link>
-            <a href="#cases">導入事例</a>
           </nav>
 
           <div className="flex items-center gap-3">
@@ -347,24 +350,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-7xl px-5 pb-9 sm:px-8">
-        <div className="rounded-2xl bg-[#f7fbff] p-7 shadow-sm">
-          <h2 className="m-0 text-2xl font-black">すぐに使える、安心の機能</h2>
-          <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {trustItems.map((item) => (
-              <div key={item.title} className="grid grid-cols-[3rem_1fr] gap-4 border-blue-100 lg:border-r lg:last:border-r-0">
-                <span className="grid h-12 w-12 place-items-center rounded-xl bg-emerald-50 text-emerald-700">
-                  <item.icon size={23} aria-hidden="true" />
-                </span>
-                <div>
-                  <h3 className="m-0 text-base font-black text-emerald-700">{item.title}</h3>
-                  <p className="m-0 mt-1 text-sm font-bold text-slate-600">{item.text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <PwaInstallSection />
 
       <section className="mx-auto grid w-full max-w-7xl gap-5 px-5 pb-9 sm:px-8">
         <div className="flex items-center justify-between gap-4">
@@ -375,11 +361,24 @@ export default function HomePage() {
           </Link>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          {faqs.map((faq) => (
-            <button key={faq} className="flex min-h-14 items-center justify-between rounded-lg border border-blue-100 bg-white px-5 text-left text-base font-black shadow-sm" type="button">
-              <span>{faq}</span>
-              <ChevronDown size={18} aria-hidden="true" />
-            </button>
+          {faqs.map((faq, index) => (
+            <div key={faq.question} className="overflow-hidden rounded-lg border border-blue-100 bg-white shadow-sm">
+              <button
+                className="flex min-h-14 w-full items-center justify-between gap-4 px-5 text-left text-base font-black text-[#061a3a]"
+                type="button"
+                aria-expanded={openFaq === index}
+                aria-controls={`home-faq-${index}`}
+                onClick={() => setOpenFaq((current) => (current === index ? null : index))}
+              >
+                <span>{faq.question}</span>
+                <ChevronDown className={`shrink-0 transition ${openFaq === index ? "rotate-180 text-blue-600" : "text-slate-500"}`} size={18} aria-hidden="true" />
+              </button>
+              {openFaq === index ? (
+                <div id={`home-faq-${index}`} className="border-t border-blue-50 px-5 pb-5 pt-4">
+                  <p className="m-0 text-sm font-bold leading-7 text-slate-600">{faq.answer}</p>
+                </div>
+              ) : null}
+            </div>
           ))}
         </div>
       </section>
