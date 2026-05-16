@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from '@vercel/analytics/next';
+import { XPixel } from "./components/XPixel";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body>
         {children}
         <Analytics />
+        <XPixel />
       </body>
     </html>
   );
