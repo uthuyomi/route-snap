@@ -7,7 +7,7 @@ import { FormEvent, Suspense, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { AppLocale } from "../components/AppHeader";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
-import { usePreferredLocale } from "../lib/locale";
+import { useVisitorLocale } from "../lib/locale";
 
 const messages = {
   ja: {
@@ -39,7 +39,7 @@ const messages = {
 } satisfies Record<AppLocale, Record<string, string>>;
 
 function LoginContent() {
-  const [locale] = usePreferredLocale();
+  const locale = useVisitorLocale();
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);

@@ -22,6 +22,12 @@ function detectLocale(): AppLocale {
   return languages.some((language) => language.toLowerCase().startsWith("ja")) ? "ja" : "en";
 }
 
+function detectVisitorLocale(): AppLocale {
+  if (typeof window === "undefined") return "ja";
+  const languages = navigator.languages?.length ? navigator.languages : [navigator.language];
+  return languages.some((language) => language.toLowerCase().startsWith("ja")) ? "ja" : "en";
+}
+
 function safeGetStoredLocale() {
   try {
     return window.localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -40,6 +46,20 @@ function subscribeLocaleChange(onStoreChange: () => void) {
     window.removeEventListener("storage", onStoreChange);
     window.removeEventListener(LOCALE_CHANGE_EVENT, onStoreChange);
   };
+}
+
+function subscribeVisitorLocaleChange(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+
+  window.addEventListener("languagechange", onStoreChange);
+
+  return () => {
+    window.removeEventListener("languagechange", onStoreChange);
+  };
+}
+
+export function useVisitorLocale() {
+  return useSyncExternalStore(subscribeVisitorLocaleChange, detectVisitorLocale, (): AppLocale => "ja");
 }
 
 export function usePreferredLocale() {

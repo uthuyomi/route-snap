@@ -1,10 +1,44 @@
 import { LegalLayout, LegalTable } from "../LegalLayout";
 
+const enSections = [
+  {
+    title: "Business disclosure",
+    body: [
+      "Seller: Kaisei Anzaki",
+      "Operations manager: Kaisei Anzaki",
+      "Address: Disclosed by email without delay when requested.",
+      "Phone number: Disclosed by email without delay when requested.",
+      "Email: kaiseif4e@gmail.com",
+      "Service name: Route Snap",
+      "Price: Monthly fees for each plan shown on the pricing page. Displayed prices are expected to include tax.",
+      "Additional costs: Internet connection fees, communication fees, and device costs are borne by the customer.",
+      "Payment method: Credit card payment. Payment processing is provided by Stripe.",
+      "Payment timing: Payment is made at initial application and then automatically renewed and charged for each contract period.",
+      "Service timing: Paid plan usage limits are granted immediately after payment is completed.",
+      "Contract period and renewal: Paid plans are monthly subscriptions and renew automatically each month until cancelled.",
+      "Sales quantity and usage limits: Usage is limited to the address reading, bulk destination import, and route sorting limits defined for each plan.",
+      "Cancellation: Cancel from billing management on the account page or by email inquiry. Access may remain available until the end of the paid period.",
+      "Returns, cancellation, and refunds: Because this is a digital service, customer-requested refunds are generally not provided after payment. Duplicate charges or service-caused failures are handled individually.",
+      "Operating environment: Smartphones, tablets, and PCs with current major browsers. Camera and location permissions may be required for image reading and current-location features.",
+      "Support hours: Accepted by email. We usually reply within 3 business days.",
+    ],
+  },
+  {
+    title: "Disclosure of address and phone number",
+    body: [
+      "To prevent nuisance or abusive contact, address and phone number are omitted from this page. If requested in connection with a transaction, they will be disclosed by email without delay in response to contact sent to the email address above.",
+    ],
+  },
+] as const;
+
 export default function TokushoPage() {
   return (
     <LegalLayout
       title="特定商取引法に基づく表記"
       lead="Route Snap のサブスクリプション提供に関する表示事項です。"
+      enTitle="Specified Commercial Transactions Act Notice"
+      enLead="Disclosure items related to Route Snap subscription services."
+      enSections={[...enSections]}
     >
       <LegalTable
         rows={[

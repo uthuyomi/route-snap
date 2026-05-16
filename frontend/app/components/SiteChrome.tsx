@@ -1,9 +1,37 @@
+"use client";
+
 import { MapPinned } from "lucide-react";
 import Link from "next/link";
+import { useVisitorLocale } from "../lib/locale";
 import { AuthHeaderActions } from "./AuthHeaderActions";
 import { SiteMobileMenu } from "./SiteMobileMenu";
 
 const appName = "route-snap";
+
+const siteCopy = {
+  ja: {
+    top: "トップ",
+    features: "機能",
+    steps: "使い方",
+    pricing: "料金",
+    faq: "よくある質問",
+    contact: "お問い合わせ",
+    terms: "利用規約",
+    privacy: "プライバシーポリシー",
+    tokusho: "特定商取引法に基づく表記",
+  },
+  en: {
+    top: "Home",
+    features: "Features",
+    steps: "How it works",
+    pricing: "Pricing",
+    faq: "FAQ",
+    contact: "Contact",
+    terms: "Terms",
+    privacy: "Privacy",
+    tokusho: "Legal notice",
+  },
+} as const;
 
 function LogoMark() {
   return (
@@ -14,6 +42,9 @@ function LogoMark() {
 }
 
 export function SiteHeader() {
+  const locale = useVisitorLocale();
+  const t = siteCopy[locale];
+
   return (
     <header className="sticky top-0 z-30 border-b border-blue-50 bg-white/92 backdrop-blur">
       <div className="mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-5 sm:px-8">
@@ -23,11 +54,11 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-10 text-sm font-black text-[#061a3a] lg:flex" aria-label="Route Snap">
-          <Link href="/?landing=1">トップ</Link>
-          <Link href="/?landing=1#features">機能</Link>
-          <Link href="/?landing=1#steps">使い方</Link>
-          <Link href="/pricing">料金</Link>
-          <Link href="/faq">よくある質問</Link>
+          <Link href="/?landing=1">{t.top}</Link>
+          <Link href="/?landing=1#features">{t.features}</Link>
+          <Link href="/?landing=1#steps">{t.steps}</Link>
+          <Link href="/pricing">{t.pricing}</Link>
+          <Link href="/faq">{t.faq}</Link>
         </nav>
 
         <div className="flex items-center gap-3">
@@ -40,6 +71,9 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const locale = useVisitorLocale();
+  const t = siteCopy[locale];
+
   return (
     <footer className="border-t border-blue-50 px-5 py-5 sm:px-8">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 text-xs font-bold text-slate-500">
@@ -48,14 +82,14 @@ export function SiteFooter() {
           <span>{appName}</span>
         </Link>
         <nav className="flex flex-wrap gap-5">
-          <Link href="/?landing=1">トップ</Link>
-          <Link href="/?landing=1#features">機能</Link>
-          <Link href="/pricing">料金</Link>
-          <Link href="/faq">よくある質問</Link>
-          <Link href="/contact">お問い合わせ</Link>
-          <Link href="/legal/terms">利用規約</Link>
-          <Link href="/legal/privacy">プライバシーポリシー</Link>
-          <Link href="/legal/tokusho">特定商取引法に基づく表記</Link>
+          <Link href="/?landing=1">{t.top}</Link>
+          <Link href="/?landing=1#features">{t.features}</Link>
+          <Link href="/pricing">{t.pricing}</Link>
+          <Link href="/faq">{t.faq}</Link>
+          <Link href="/contact">{t.contact}</Link>
+          <Link href="/legal/terms">{t.terms}</Link>
+          <Link href="/legal/privacy">{t.privacy}</Link>
+          <Link href="/legal/tokusho">{t.tokusho}</Link>
         </nav>
         <span>© 2024 route-snap</span>
       </div>

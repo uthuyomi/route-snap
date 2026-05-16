@@ -3,6 +3,7 @@
 import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { usePreferredLocale } from "../../lib/locale";
 import { StatusDashboard, type StatusDashboardProps } from "./StatusDashboard";
 
 type LoadState =
@@ -11,7 +12,28 @@ type LoadState =
   | { status: "login" }
   | { status: "error"; message: string };
 
+const statusCopy = {
+  ja: {
+    missingSupabase: "Supabaseの公開設定が見つかりません。",
+    loadFailed: "アカウント情報を読み込めませんでした。",
+    loginTitle: "ログインが必要です",
+    loginLead: "アカウントステータスを確認するには、もう一度ログインしてください。",
+    login: "ログイン",
+    errorTitle: "読み込みエラー",
+  },
+  en: {
+    missingSupabase: "Supabase public settings were not found.",
+    loadFailed: "Could not load account information.",
+    loginTitle: "Log in required",
+    loginLead: "Please log in again to view your account status.",
+    login: "Log in",
+    errorTitle: "Loading error",
+  },
+} as const;
+
 export function AccountStatusClient() {
+  const [locale] = usePreferredLocale();
+  const t = statusCopy[locale];
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const supabase = useMemo(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -25,7 +47,7 @@ export function AccountStatusClient() {
 
     async function loadStatus() {
       if (!supabase) {
-        setState({ status: "error", message: "Supabaseの公開設定が見つかりません。" });
+        setState({ status: "error", message: t.missingSupabase });
         return;
       }
 
@@ -51,7 +73,7 @@ export function AccountStatusClient() {
       }
 
       if (!response.ok) {
-        setState({ status: "error", message: "アカウント情報を読み込めませんでした。" });
+        setState({ status: "error", message: t.loadFailed });
         return;
       }
 
@@ -68,7 +90,7 @@ export function AccountStatusClient() {
       isActive = false;
       data?.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, t]);
 
   if (state.status === "ready") {
     return <StatusDashboard {...state.data} />;
@@ -77,12 +99,12 @@ export function AccountStatusClient() {
   if (state.status === "login") {
     return (
       <section className="site-section grid gap-5">
-        <h1 className="m-0 text-4xl font-black text-[#061a3a]">ログインが必要です</h1>
+        <h1 className="m-0 text-4xl font-black text-[#061a3a]">{t.loginTitle}</h1>
         <p className="m-0 text-sm font-bold leading-7 text-slate-500">
-          アカウントステータスを確認するには、もう一度ログインしてください。
+          {t.loginLead}
         </p>
         <Link className="site-primary w-fit" href="/login?next=/account/status">
-          ログイン
+          {t.login}
         </Link>
       </section>
     );
@@ -91,7 +113,7 @@ export function AccountStatusClient() {
   if (state.status === "error") {
     return (
       <section className="site-section grid gap-3">
-        <h1 className="m-0 text-4xl font-black text-[#061a3a]">読み込みエラー</h1>
+        <h1 className="m-0 text-4xl font-black text-[#061a3a]">{t.errorTitle}</h1>
         <p className="m-0 text-sm font-bold leading-7 text-slate-500">{state.message}</p>
       </section>
     );

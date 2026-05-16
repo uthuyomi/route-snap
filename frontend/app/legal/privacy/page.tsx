@@ -3,11 +3,29 @@ import { LegalLayout } from "../LegalLayout";
 const serviceName = "Route Snap";
 const contactEmail = "kaiseif4e@gmail.com";
 
+const enSections = [
+  { title: "1. Information collected", body: ["The service may collect email addresses, authentication IDs, account information, subscribed plans, usage volume, payment status, inquiry content, device and browser technical information, access logs, cookies, and similar identifiers.", "The service also processes uploaded images, photos, screenshots, TXT, CSV, TSV, JSON, and similar files, as well as extracted addresses, facility names, visit memos, time windows, visit conditions, AI processing results, and conditions needed for route creation."] },
+  { title: "2. Purposes of use", body: ["Collected information is used for address reading, destination organization, route creation, Google Maps integration, starting routes from current location, usage aggregation, identity confirmation, login management, payment management, support, abuse prevention, quality improvement, failure investigation, and legal compliance."] },
+  { title: "3. Image and address data", body: ["Images, files, extracted text, addresses, facility names, and visit memos may contain personal information or confidential business information. Users should upload only information they have permission to use.", "The service processes this information only as needed for address reading, route creation, usage history, abuse prevention, quality improvement, and support. Unnecessary information will be deleted or anonymized within a reasonable period."] },
+  { title: "4. Location information", body: ["Features that start routes from the current location may use device location information based on browser permission. Location information is used only when explicitly permitted by the user and only for route creation. Permission can be revoked from browser or OS settings."] },
+  { title: "5. AI processing", body: ["For address reading and route creation, uploaded images, extracted text, addresses, visit conditions, and similar data may be sent to AI processing services. AI results may be inaccurate and may include errors in addresses, facility names, room numbers, phone numbers, visit times, or routes.", "Users should review and, if needed, correct output before actual delivery, visits, or travel."] },
+  { title: "6. External services", body: ["The service may use external services such as Supabase for authentication and data management, Stripe for payments, OpenAI for AI processing, and Google Maps for maps and route integration. Authentication information, payment-related information, uploaded data, addresses, memos, usage status, and operation information may be sent to these services as needed to provide features.", "Payment information is processed by Stripe, and the service does not store credit card numbers. External services are governed by their own terms and privacy policies."] },
+  { title: "7. Cookies, logs, and analytics", body: ["The service may use cookies, local storage, access logs, browser information, referrers, operation history, and error information to maintain login status, provide security, understand usage, investigate failures, and improve quality."] },
+  { title: "8. Security management", body: ["The service takes reasonable security measures such as access control, authentication management, encrypted communication, permission management, and log monitoring to prevent unauthorized access, leakage, loss, or damage. However, complete security is not guaranteed due to internet communication and use of external services."] },
+  { title: "9. Retention period", body: ["Information is retained for periods necessary to fulfill purposes of use, manage contracts and billing, respond to failures, prevent abuse, and comply with legal retention obligations. Information that is no longer needed will be deleted or anonymized within a reasonable period."] },
+  { title: "10. Third-party disclosure", body: ["The service does not provide personal information to third parties except when required by law, with user consent, when providing it to contractors necessary for service operation, or when necessary to respond to abuse or rights infringement."] },
+  { title: "11. Disclosure, correction, deletion, and contact", body: [`Users may request disclosure, correction, suspension of use, or deletion of their personal information within the scope of applicable law. After identity confirmation, the service will respond within a reasonable scope. For questions about personal information handling, contact ${contactEmail}.`] },
+  { title: "12. Changes", body: ["The service may change this policy due to legal revisions, feature additions, external service changes, or operational improvements. Important changes will be notified by reasonable means such as in-service notices or email."] },
+] as const;
+
 export default function PrivacyPage() {
   return (
     <LegalLayout
       title="プライバシーポリシー"
       lead={`${serviceName}における個人情報、業務データ、アップロード画像、利用履歴、決済関連情報の取り扱いについて説明します。`}
+      enTitle="Privacy Policy"
+      enLead={`This policy explains how ${serviceName} handles personal information, business data, uploaded images, usage history, and payment-related information.`}
+      enSections={[...enSections]}
     >
       <section>
         <h2 className="m-0 text-lg font-black text-neutral-950">1. 取得する情報</h2>

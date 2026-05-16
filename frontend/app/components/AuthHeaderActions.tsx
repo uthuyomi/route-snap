@@ -5,6 +5,7 @@ import { LogOut, UserCircle } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { useVisitorLocale } from "../lib/locale";
 
 type AuthHeaderActionsProps = {
   loginHref?: string;
@@ -12,15 +13,34 @@ type AuthHeaderActionsProps = {
   appLabel?: string;
 };
 
-function getAccountName(user: User | null) {
+const authCopy = {
+  ja: {
+    account: "アカウント",
+    app: "アプリに移動",
+    login: "ログイン",
+    start: "無料で始める",
+    logout: "ログアウト",
+  },
+  en: {
+    account: "Account",
+    app: "Open app",
+    login: "Log in",
+    start: "Start free",
+    logout: "Log out",
+  },
+} as const;
+
+function getAccountName(user: User | null, fallback: string) {
   if (!user) return "";
   const metadataName = user.user_metadata?.name || user.user_metadata?.full_name;
   if (typeof metadataName === "string" && metadataName.trim()) return metadataName.trim();
-  return user.email ?? "アカウント";
+  return user.email ?? fallback;
 }
 
-export function AuthHeaderActions({ loginHref = "/login?next=/app", appHref = "/app", appLabel = "アプリに移動" }: AuthHeaderActionsProps) {
+export function AuthHeaderActions({ loginHref = "/login?next=/app", appHref = "/app", appLabel }: AuthHeaderActionsProps) {
   const [user, setUser] = useState<User | null>(null);
+  const locale = useVisitorLocale();
+  const t = authCopy[locale];
   const supabase = useMemo(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -47,11 +67,11 @@ export function AuthHeaderActions({ loginHref = "/login?next=/app", appHref = "/
   }, [supabase]);
 
   if (user) {
-    const accountName = getAccountName(user);
+    const accountName = getAccountName(user, t.account);
     return (
       <div className="flex min-w-0 items-center gap-2">
         <Link className="hidden min-h-10 items-center justify-center rounded-lg bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700 md:inline-flex" href={appHref}>
-          {appLabel}
+          {appLabel ?? t.app}
         </Link>
         <Link className="hidden min-h-10 max-w-52 items-center gap-2 rounded-lg border border-blue-100 bg-blue-50 px-3 text-sm font-black text-[#061a3a] shadow-sm transition hover:border-blue-300 sm:inline-flex" href="/account/status" title={accountName}>
           <UserCircle className="shrink-0 text-blue-600" size={20} aria-hidden="true" />
@@ -60,7 +80,7 @@ export function AuthHeaderActions({ loginHref = "/login?next=/app", appHref = "/
         <Link className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 shadow-sm transition hover:border-blue-300 sm:hidden" href="/account/status" aria-label={accountName} title={accountName}>
           <UserCircle size={20} aria-hidden="true" />
         </Link>
-        <Link className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-white text-[#061a3a] shadow-sm transition hover:border-blue-300 hover:bg-blue-50" href="/logout" aria-label="ログアウト" title="ログアウト">
+        <Link className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-white text-[#061a3a] shadow-sm transition hover:border-blue-300 hover:bg-blue-50" href="/logout" aria-label={t.logout} title={t.logout}>
           <LogOut size={18} aria-hidden="true" />
         </Link>
       </div>
@@ -70,10 +90,10 @@ export function AuthHeaderActions({ loginHref = "/login?next=/app", appHref = "/
   return (
     <>
       <Link className="hidden min-h-10 items-center justify-center rounded-lg border border-blue-100 bg-white px-5 text-sm font-black text-[#061a3a] shadow-sm transition hover:border-blue-300 sm:inline-flex" href={loginHref}>
-        ログイン
+        {t.login}
       </Link>
       <Link className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700" href={appHref}>
-        無料で始める
+        {t.start}
       </Link>
     </>
   );
@@ -81,6 +101,8 @@ export function AuthHeaderActions({ loginHref = "/login?next=/app", appHref = "/
 
 export function AppMoveCta({ className, children, icon }: { className: string; children?: ReactNode; icon?: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const locale = useVisitorLocale();
+  const t = authCopy[locale];
   const supabase = useMemo(() => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -108,7 +130,7 @@ export function AppMoveCta({ className, children, icon }: { className: string; c
 
   return (
     <Link className={className} href="/app">
-      <span>{isLoggedIn ? "アプリに移動" : children}</span>
+      <span>{isLoggedIn ? t.app : children}</span>
       {icon}
     </Link>
   );

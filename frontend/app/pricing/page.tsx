@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AppLocale } from "../components/AppHeader";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
-import { usePreferredLocale } from "../lib/locale";
+import { useVisitorLocale } from "../lib/locale";
 import { PlanId } from "../lib/plans";
 
 const messages = {
@@ -129,7 +129,7 @@ function formatNumber(value: number, locale: AppLocale) {
 }
 
 export default function PricingPage() {
-  const [locale] = usePreferredLocale();
+  const locale = useVisitorLocale();
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const t = messages[locale];
