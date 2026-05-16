@@ -20,8 +20,6 @@ const messages = {
     capture: "住所読み取り",
     chooseImage: "画像を選択",
     takePhoto: "撮影する",
-    analyze: "住所を整形",
-    analyzing: "読み取り中",
     retake: "撮り直す",
     reset: "クリア",
     destination: "行き先",
@@ -37,7 +35,6 @@ const messages = {
     imageAlt: "読み取り対象の住所画像",
     photoAria: "住所を撮影",
     libraryAria: "端末内の画像を選択",
-    analyzeAria: "AIで住所を整形",
     retakeAria: "写真を撮り直す",
     resetAria: "入力内容をクリア",
     mapsAria: "Google Mapsで開く",
@@ -48,14 +45,12 @@ const messages = {
     readyPhoto: "画像選択済み",
     mapsHelp: "Mapsを開く前に住所を確認・編集できます。読み取りが曖昧な時は建物名や郵便番号も残してください。",
     photoSource: "取り込み方法",
-    resultTools: "読み取り操作"
+    resultTools: "画像操作"
   },
   en: {
     capture: "Read address",
     chooseImage: "Choose image",
     takePhoto: "Take photo",
-    analyze: "Format address",
-    analyzing: "Reading",
     retake: "Retake",
     reset: "Clear",
     destination: "Destination",
@@ -71,7 +66,6 @@ const messages = {
     imageAlt: "Captured address image",
     photoAria: "Capture address",
     libraryAria: "Choose an image from this device",
-    analyzeAria: "Format address with AI",
     retakeAria: "Retake photo",
     resetAria: "Clear input",
     mapsAria: "Open in Google Maps",
@@ -82,7 +76,7 @@ const messages = {
     readyPhoto: "Image selected",
     mapsHelp: "You can edit the address before opening Maps.",
     photoSource: "Input source",
-    resultTools: "Read actions"
+    resultTools: "Image actions"
   }
 } satisfies Record<AppLocale, Record<string, string>>;
 
@@ -91,10 +85,6 @@ function secondaryButtonClass(active = true) {
     "secondary-action aspect-square min-h-12 px-0 sm:min-h-14",
     active ? "" : "border-neutral-200 bg-neutral-100 text-neutral-400"
   ].join(" ");
-}
-
-function primaryButtonClass() {
-  return "primary-action aspect-square min-h-14 px-0";
 }
 
 function headerButtonClass(active = true) {
@@ -143,24 +133,26 @@ export default function Home() {
     }
 
     setImageFile(file);
-    preparedImageRef.current = prepareImageForUpload(file, {
+    const preparedImage = prepareImageForUpload(file, {
       maxImageEdge: 1400,
       jpegQuality: 0.8
     });
+    preparedImageRef.current = preparedImage;
     setPreviewUrl(URL.createObjectURL(file));
     setResult(null);
     setManualAddress("");
     setError(null);
+    analyzeImage(file, preparedImage);
   }
 
-  async function analyzeImage() {
-    if (!imageFile) return;
+  async function analyzeImage(targetFile = imageFile, preparedImage = preparedImageRef.current) {
+    if (!targetFile) return;
 
     setIsLoading(true);
     setError(null);
 
     try {
-      const uploadFile = await (preparedImageRef.current ?? prepareImageForUpload(imageFile, {
+      const uploadFile = await (preparedImage ?? prepareImageForUpload(targetFile, {
         maxImageEdge: 1400,
         jpegQuality: 0.8
       }));
@@ -257,12 +249,8 @@ export default function Home() {
             </div>
 
             {previewUrl ? (
-              <div className="grid grid-cols-3 gap-2 rounded-2xl border border-blue-100 bg-white/75 p-2 shadow-sm">
+              <div className="grid grid-cols-2 gap-2 rounded-2xl border border-blue-100 bg-white/75 p-2 shadow-sm">
                 <p className="sr-only">{t.resultTools}</p>
-                <button className={primaryButtonClass()} type="button" onClick={analyzeImage} disabled={!imageFile || isLoading} aria-label={t.analyzeAria} title={t.analyzeAria}>
-                  {isLoading ? <Loader2 className="animate-spin" size={22} aria-hidden="true" /> : <ScanText size={22} aria-hidden="true" />}
-                  <span className="sr-only">{isLoading ? t.analyzing : t.analyze}</span>
-                </button>
                 <button className={secondaryButtonClass()} type="button" onClick={() => cameraInputRef.current?.click()} aria-label={t.retakeAria} title={t.retakeAria}>
                   <Camera size={18} aria-hidden="true" />
                   <span className="sr-only">{t.retake}</span>
@@ -320,7 +308,7 @@ export default function Home() {
                 ].join(" ")}
                 title={error ?? t.status}
               >
-                {error ? <XCircle size={20} aria-hidden="true" /> : <Check size={20} aria-hidden="true" />}
+                {isLoading ? <Loader2 className="animate-spin" size={20} aria-hidden="true" /> : error ? <XCircle size={20} aria-hidden="true" /> : <Check size={20} aria-hidden="true" />}
                 <span className="sr-only">{error ? t.needsCheck : t.ready}</span>
               </div>
             </div>

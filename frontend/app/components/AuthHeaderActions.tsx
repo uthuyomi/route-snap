@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useVisitorLocale } from "../lib/locale";
+import { LogoutControl } from "./LogoutControl";
 
 type AuthHeaderActionsProps = {
   loginHref?: string;
@@ -80,9 +81,9 @@ export function AuthHeaderActions({ loginHref = "/login?next=/app", appHref = "/
         <Link className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-blue-50 text-blue-600 shadow-sm transition hover:border-blue-300 sm:hidden" href="/account/status" aria-label={accountName} title={accountName}>
           <UserCircle size={20} aria-hidden="true" />
         </Link>
-        <Link className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-white text-[#061a3a] shadow-sm transition hover:border-blue-300 hover:bg-blue-50" href="/logout" aria-label={t.logout} title={t.logout}>
+        <LogoutControl className="grid h-10 w-10 place-items-center rounded-lg border border-blue-100 bg-white text-[#061a3a] shadow-sm transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-60" label={t.logout}>
           <LogOut size={18} aria-hidden="true" />
-        </Link>
+        </LogoutControl>
       </div>
     );
   }

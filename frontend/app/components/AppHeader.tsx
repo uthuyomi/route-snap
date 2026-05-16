@@ -5,6 +5,7 @@ import { CreditCard, Globe2, Home, LogIn, LogOut, MapPinned, Menu, Route, ScanTe
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { LogoutControl } from "./LogoutControl";
 
 export type AppLocale = "ja" | "en";
 type AppPage = "home" | "app" | "single" | "batch" | "pricing";
@@ -148,9 +149,9 @@ export function AppHeader({ locale, currentPage }: AppHeaderProps) {
             <Link className={`${iconButtonClass()} sm:hidden`} href="/account/status" aria-label={accountName} title={accountName}>
               <UserCircle size={20} aria-hidden="true" />
             </Link>
-            <Link className={iconButtonClass()} href="/logout" aria-label={t.logout} title={t.logout}>
+            <LogoutControl className={`${iconButtonClass()} disabled:opacity-60`} label={t.logout}>
               <LogOut size={19} aria-hidden="true" />
-            </Link>
+            </LogoutControl>
           </>
         ) : (
           <Link className={iconButtonClass()} href={accountHref} aria-label={t.login} title={t.login}>

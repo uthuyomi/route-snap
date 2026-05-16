@@ -27,7 +27,7 @@ const appName = "route-snap";
 
 const homeCopy = {
   ja: {
-    nav: { top: "トップ", features: "機能", steps: "使い方", pricing: "料金", faq: "よくある質問", contact: "お問い合わせ", terms: "利用規約", privacy: "プライバシーポリシー", tokusho: "特定商取引法に基づく表記" },
+    nav: { top: "トップ", features: "機能", steps: "使い方", app: "アプリ管理", pricing: "料金", faq: "よくある質問", contact: "お問い合わせ", terms: "利用規約", privacy: "プライバシーポリシー", tokusho: "特定商取引法に基づく表記" },
     heroTitle: <>そのルートが、<br />ビジネスを変える。</>,
     heroLead: "最適なルートで、配送をもっとスマートに。",
     start: "無料で始める",
@@ -65,7 +65,7 @@ const homeCopy = {
     ],
   },
   en: {
-    nav: { top: "Home", features: "Features", steps: "How it works", pricing: "Pricing", faq: "FAQ", contact: "Contact", terms: "Terms", privacy: "Privacy", tokusho: "Legal notice" },
+    nav: { top: "Home", features: "Features", steps: "How it works", app: "App dashboard", pricing: "Pricing", faq: "FAQ", contact: "Contact", terms: "Terms", privacy: "Privacy", tokusho: "Legal notice" },
     heroTitle: <>Routes that<br />change the workday.</>,
     heroLead: "Smarter route planning for delivery, visits, and field teams.",
     start: "Start free",
@@ -190,6 +190,11 @@ export default function HomePage() {
     const url = new URL(window.location.href);
     if (url.searchParams.get("landing") === "1") return;
 
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (!isStandalone) return;
+
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseAnonKey) return;
@@ -221,6 +226,7 @@ export default function HomePage() {
             <Link href="/?landing=1">{t.nav.top}</Link>
             <a href="#features">{t.nav.features}</a>
             <a href="#steps">{t.nav.steps}</a>
+            <Link href="/app">{t.nav.app}</Link>
             <Link href="/pricing">{t.nav.pricing}</Link>
             <Link href="/faq">{t.nav.faq}</Link>
           </nav>
@@ -397,6 +403,7 @@ export default function HomePage() {
           <nav className="flex flex-wrap gap-5">
             <Link href="/?landing=1">{t.nav.top}</Link>
             <a href="#features">{t.nav.features}</a>
+            <Link href="/app">{t.nav.app}</Link>
             <Link href="/pricing">{t.nav.pricing}</Link>
             <Link href="/faq">{t.nav.faq}</Link>
             <Link href="/contact">{t.nav.contact}</Link>

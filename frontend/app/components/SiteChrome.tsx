@@ -16,6 +16,7 @@ const siteCopy = {
     pricing: "料金",
     faq: "よくある質問",
     contact: "お問い合わせ",
+    app: "アプリ管理",
     terms: "利用規約",
     privacy: "プライバシーポリシー",
     tokusho: "特定商取引法に基づく表記",
@@ -27,6 +28,7 @@ const siteCopy = {
     pricing: "Pricing",
     faq: "FAQ",
     contact: "Contact",
+    app: "App dashboard",
     terms: "Terms",
     privacy: "Privacy",
     tokusho: "Legal notice",
@@ -57,6 +59,7 @@ export function SiteHeader() {
           <Link href="/?landing=1">{t.top}</Link>
           <Link href="/?landing=1#features">{t.features}</Link>
           <Link href="/?landing=1#steps">{t.steps}</Link>
+          <Link href="/app">{t.app}</Link>
           <Link href="/pricing">{t.pricing}</Link>
           <Link href="/faq">{t.faq}</Link>
         </nav>

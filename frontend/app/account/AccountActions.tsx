@@ -1,8 +1,8 @@
 "use client";
 
 import { CreditCard, LogOut } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
+import { LogoutControl } from "../components/LogoutControl";
 
 type AccountActionsProps = {
   manageLabel: string;
@@ -29,11 +29,10 @@ export function AccountActions({ manageLabel, logoutLabel }: AccountActionsProps
         <CreditCard size={18} aria-hidden="true" />
         <span>{manageLabel}</span>
       </button>
-      <Link className="secondary-action" href="/logout">
+      <LogoutControl className="secondary-action disabled:opacity-60" label={logoutLabel}>
         <LogOut size={18} aria-hidden="true" />
         <span>{logoutLabel}</span>
-      </Link>
+      </LogoutControl>
     </div>
   );
 }
-

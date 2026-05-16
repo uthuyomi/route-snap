@@ -3,7 +3,7 @@
 import { Mail, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { AppLocale } from "../components/AppHeader";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
@@ -52,6 +52,22 @@ function LoginContent() {
     if (!supabaseUrl || !supabaseAnonKey) return null;
     return createClient(supabaseUrl, supabaseAnonKey);
   }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    let isActive = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!isActive || !data.session) return;
+      const next = searchParams.get("next") || "/app";
+      const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/app";
+      window.location.replace(safeNext);
+    });
+
+    return () => {
+      isActive = false;
+    };
+  }, [searchParams, supabase]);
 
   function redirectTo() {
     const next = searchParams.get("next") || "/app";
