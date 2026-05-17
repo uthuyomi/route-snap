@@ -1,15 +1,19 @@
 "use client";
 
-import { Menu, X } from "lucide-react";
+import { createClient, type User } from "@supabase/supabase-js";
+import { LogIn, LogOut, Menu, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useVisitorLocale } from "../lib/locale";
+import { LogoutControl } from "./LogoutControl";
 
 const menuCopy = {
   ja: {
     menu: "メニュー",
     close: "メニューを閉じる",
     nav: "サイトメニュー",
+    login: "ログイン",
+    logout: "ログアウト",
     items: [
       { href: "/?landing=1", label: "トップ" },
       { href: "/?landing=1#features", label: "機能" },
@@ -24,6 +28,8 @@ const menuCopy = {
     menu: "Menu",
     close: "Close menu",
     nav: "Site menu",
+    login: "Log in",
+    logout: "Log out",
     items: [
       { href: "/?landing=1", label: "Home" },
       { href: "/?landing=1#features", label: "Features" },
@@ -38,8 +44,33 @@ const menuCopy = {
 
 export function SiteMobileMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const locale = useVisitorLocale();
   const t = menuCopy[locale];
+  const supabase = useMemo(() => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseAnonKey) return null;
+    return createClient(supabaseUrl, supabaseAnonKey);
+  }, []);
+
+  useEffect(() => {
+    if (!supabase) return;
+
+    let isActive = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (isActive) setUser(data.session?.user ?? null);
+    });
+
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      isActive = false;
+      data.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   return (
     <>
@@ -67,6 +98,21 @@ export function SiteMobileMenu() {
                 <span>{item.label}</span>
               </Link>
             ))}
+            {user ? (
+              <LogoutControl className="flex min-h-12 items-center justify-between rounded-xl border border-blue-100 bg-white px-4 text-sm font-black text-[#061a3a] shadow-sm transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-60" label={t.logout}>
+                <span>{t.logout}</span>
+                <LogOut size={18} aria-hidden="true" />
+              </LogoutControl>
+            ) : (
+              <Link
+                className="flex min-h-12 items-center justify-between rounded-xl border border-blue-100 bg-white px-4 text-sm font-black text-[#061a3a] shadow-sm transition hover:border-blue-300 hover:bg-blue-50"
+                href="/login?next=/app"
+                onClick={() => setIsOpen(false)}
+              >
+                <span>{t.login}</span>
+                <LogIn size={18} aria-hidden="true" />
+              </Link>
+            )}
           </nav>
         </div>
       ) : null}

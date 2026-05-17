@@ -102,6 +102,7 @@ export default function Home() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const libraryInputRef = useRef<HTMLInputElement | null>(null);
   const preparedImageRef = useRef<Promise<File> | null>(null);
+  const activeReadIdRef = useRef(0);
   const [locale, setLocale] = usePreferredLocale();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -114,6 +115,7 @@ export default function Home() {
   const activeAddress = (manualAddress || result?.normalized_address || "").trim();
 
   function resetCapture() {
+    activeReadIdRef.current += 1;
     setImageFile(null);
     setPreviewUrl(null);
     preparedImageRef.current = null;
@@ -142,10 +144,12 @@ export default function Home() {
     setResult(null);
     setManualAddress("");
     setError(null);
-    analyzeImage(file, preparedImage);
+    const readId = activeReadIdRef.current + 1;
+    activeReadIdRef.current = readId;
+    analyzeImage(file, preparedImage, readId);
   }
 
-  async function analyzeImage(targetFile = imageFile, preparedImage = preparedImageRef.current) {
+  async function analyzeImage(targetFile = imageFile, preparedImage = preparedImageRef.current, readId = activeReadIdRef.current) {
     if (!targetFile) return;
 
     setIsLoading(true);
@@ -174,13 +178,17 @@ export default function Home() {
         throw new Error(payload.detail ?? t.parseFailed);
       }
 
+      if (readId !== activeReadIdRef.current) return;
       setResult(payload);
       setManualAddress(payload.normalized_address ?? "");
 
     } catch (caught) {
+      if (readId !== activeReadIdRef.current) return;
       setError(caught instanceof Error ? caught.message : t.unknownError);
     } finally {
-      setIsLoading(false);
+      if (readId === activeReadIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }
 

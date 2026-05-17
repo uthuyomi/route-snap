@@ -262,6 +262,7 @@ export default function BatchRoutePage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const previewUrlsRef = useRef<string[]>([]);
+  const activeReadIdRef = useRef(0);
   const [locale, setLocale] = usePreferredLocale();
   const [stops, setStops] = useState<BatchStop[]>([]);
   const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
@@ -307,6 +308,7 @@ export default function BatchRoutePage() {
   }
 
   function clearWorkspace() {
+    activeReadIdRef.current += 1;
     previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     previewUrlsRef.current = [];
     setStops([]);
@@ -321,7 +323,8 @@ export default function BatchRoutePage() {
     clearInputs();
   }
 
-  async function readImageFile(file: File) {
+  async function readImageFile(file: File, readId: number) {
+    if (readId !== activeReadIdRef.current) return;
     const id = createId();
     setStops((current) => [
       ...current,
@@ -347,6 +350,7 @@ export default function BatchRoutePage() {
         body: formData
       });
       const payload = (await response.json()) as AddressListResult & { detail?: string };
+      if (readId !== activeReadIdRef.current) return;
       if (!response.ok) {
         if (response.status === 401) {
           window.location.assign("/login?next=/batch");
@@ -402,6 +406,7 @@ export default function BatchRoutePage() {
         );
       });
     } catch (caught) {
+      if (readId !== activeReadIdRef.current) return;
       setStops((current) =>
         current.map((stop) =>
           stop.id === id
@@ -416,8 +421,9 @@ export default function BatchRoutePage() {
     }
   }
 
-  async function readTextFile(file: File) {
+  async function readTextFile(file: File, readId: number) {
     const text = await file.text();
+    if (readId !== activeReadIdRef.current) return;
     const extractedStops = extractTextStops(file.name, text);
     if (!extractedStops.length) {
       setStops((current) => [
@@ -442,6 +448,7 @@ export default function BatchRoutePage() {
       body: JSON.stringify({ count: extractedStops.length })
     });
     const usagePayload = (await usageResponse.json()) as { detail?: string };
+    if (readId !== activeReadIdRef.current) return;
     if (!usageResponse.ok) {
       if (usageResponse.status === 401) {
         window.location.assign("/login?next=/batch");
@@ -460,6 +467,8 @@ export default function BatchRoutePage() {
     setIsReading(true);
     setError(null);
     setRouteNotes([]);
+    const readId = activeReadIdRef.current + 1;
+    activeReadIdRef.current = readId;
 
     try {
       const imageFiles: File[] = [];
@@ -468,10 +477,11 @@ export default function BatchRoutePage() {
         if (file.type.startsWith("image/")) {
           imageFiles.push(file);
         } else {
-          await readTextFile(file);
+          await readTextFile(file, readId);
         }
       }
 
+      if (readId !== activeReadIdRef.current) return;
       if (imageFiles.length) {
         const nextPreviews = imageFiles.map((file) => ({
           id: createId(),
@@ -485,14 +495,18 @@ export default function BatchRoutePage() {
         ]);
       }
 
-      await runLimited(imageFiles, 3, readImageFile);
+      await runLimited(imageFiles, 3, (file) => readImageFile(file, readId));
+      if (readId !== activeReadIdRef.current) return;
       setRouteMode("file");
       setRouteOrderIds([]);
     } catch (caught) {
+      if (readId !== activeReadIdRef.current) return;
       setError(caught instanceof Error ? caught.message : t.fileReadFailed);
     } finally {
-      setIsReading(false);
-      clearInputs();
+      if (readId === activeReadIdRef.current) {
+        setIsReading(false);
+        clearInputs();
+      }
     }
   }
 

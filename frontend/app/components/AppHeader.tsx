@@ -121,6 +121,17 @@ export function AppHeader({ locale, currentPage }: AppHeaderProps) {
               <span>{t.pricing}</span>
               <CreditCard size={18} aria-hidden="true" />
             </Link>
+            {isLoggedIn ? (
+              <LogoutControl className={menuItemClass()} label={t.logout}>
+                <span>{t.logout}</span>
+                <LogOut size={18} aria-hidden="true" />
+              </LogoutControl>
+            ) : (
+              <Link className={menuItemClass()} href={accountHref} onClick={() => setIsMenuOpen(false)}>
+                <span>{t.login}</span>
+                <LogIn size={18} aria-hidden="true" />
+              </Link>
+            )}
           </nav>
         </div>,
         document.body
