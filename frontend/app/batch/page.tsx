@@ -18,6 +18,7 @@ type BatchStop = {
   sourceName: string;
   address: string;
   status: StopStatus;
+  confidence?: number;
   note?: string;
   routeNote: string;
 };
@@ -278,6 +279,7 @@ export default function BatchRoutePage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
   const [draggedStopId, setDraggedStopId] = useState<string | null>(null);
+  const [reviewStopId, setReviewStopId] = useState<string | null>(null);
   const t = messages[locale];
 
   const usableStops = useMemo(() => stops.filter((stop) => stop.address.trim()), [stops]);
@@ -338,6 +340,7 @@ export default function BatchRoutePage() {
     setError(null);
     setSelectedStopId(null);
     setDraggedStopId(null);
+    setReviewStopId(null);
     clearInputs();
   }
 
@@ -401,7 +404,8 @@ export default function BatchRoutePage() {
           address: address.normalized_address,
           routeNote: address.label || "",
           status: "ready" as StopStatus,
-          note: address.notes?.join(" / ") || `${t.confidence} ${Math.round((address.confidence ?? 0) * 100)}%`
+          confidence: address.confidence ?? 0,
+          note: address.notes?.join(" / ")
         }));
 
         return current.flatMap((stop) =>
@@ -413,10 +417,10 @@ export default function BatchRoutePage() {
                   address: firstAddress.normalized_address,
                   routeNote: firstAddress.label || stop.routeNote,
                   status: "ready" as StopStatus,
+                  confidence: firstAddress.confidence ?? 0,
                   note:
                     firstAddress.notes?.join(" / ") ||
-                    payload.notes?.join(" / ") ||
-                    `${t.confidence} ${Math.round((firstAddress.confidence ?? 0) * 100)}%`
+                    payload.notes?.join(" / ")
                 },
                 ...additionalStops
               ]
@@ -485,6 +489,7 @@ export default function BatchRoutePage() {
     setIsReading(true);
     setError(null);
     setRouteNotes([]);
+    setReviewStopId(null);
     const readId = activeReadIdRef.current + 1;
     activeReadIdRef.current = readId;
     guardClearFor(1800);
@@ -546,6 +551,7 @@ export default function BatchRoutePage() {
     setStops((current) => current.filter((stop) => stop.id !== id));
     setRouteOrderIds((current) => current.filter((stopId) => stopId !== id));
     setSelectedStopId((current) => (current === id ? null : current));
+    setReviewStopId((current) => (current === id ? null : current));
   }
 
   function applyManualOrder(nextStops: BatchStop[]) {
@@ -821,10 +827,26 @@ export default function BatchRoutePage() {
                         />
                         <span className="sr-only">{t.stopNoteHelp}</span>
                       </label>
-                      <p className="m-0 line-clamp-2 text-xs font-semibold text-neutral-500">
-                        {stop.sourceName}
-                        {stop.note ? ` / ${stop.note}` : ""}
-                      </p>
+                      <div className="grid gap-1">
+                        <p className="m-0 flex flex-wrap items-center gap-2 text-xs font-semibold text-neutral-500">
+                          <span>{stop.sourceName}</span>
+                          {typeof stop.confidence === "number" ? (
+                            <button
+                              className="inline-flex min-h-7 items-center rounded-lg border border-blue-100 bg-white px-2 text-xs font-black tabular-nums text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"
+                              type="button"
+                              onClick={() => setReviewStopId((current) => (current === stop.id ? null : stop.id))}
+                              aria-expanded={reviewStopId === stop.id}
+                              title={t.confidence}
+                            >
+                              {Math.round(stop.confidence * 100)}%
+                              <span className="sr-only">{t.confidence}</span>
+                            </button>
+                          ) : null}
+                        </p>
+                        {reviewStopId === stop.id && stop.note ? (
+                          <p className="m-0 line-clamp-3 text-xs font-semibold leading-5 text-neutral-500">{stop.note}</p>
+                        ) : null}
+                      </div>
                     </div>
                     <button className={buttonClass()} type="button" onClick={() => removeStop(stop.id)} aria-label={t.delete} title={t.delete}>
                       <Trash2 size={18} aria-hidden="true" />

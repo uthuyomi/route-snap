@@ -100,6 +100,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isClearGuarded, setIsClearGuarded] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isReviewVisible, setIsReviewVisible] = useState(false);
 
   const t = messages[locale];
   const activeAddress = (manualAddress || result?.normalized_address || "").trim();
@@ -133,6 +134,7 @@ export default function Home() {
     setResult(null);
     setManualAddress("");
     setError(null);
+    setIsReviewVisible(false);
     if (cameraInputRef.current) cameraInputRef.current.value = "";
     if (libraryInputRef.current) libraryInputRef.current.value = "";
   }
@@ -155,6 +157,7 @@ export default function Home() {
     setResult(null);
     setManualAddress("");
     setError(null);
+    setIsReviewVisible(false);
     const readId = activeReadIdRef.current + 1;
     activeReadIdRef.current = readId;
     guardClearFor(1800);
@@ -193,6 +196,7 @@ export default function Home() {
       if (readId !== activeReadIdRef.current) return;
       setResult(payload);
       setManualAddress((current) => payload.normalized_address?.trim() || current);
+      setIsReviewVisible(false);
 
     } catch (caught) {
       if (readId !== activeReadIdRef.current) return;
@@ -305,10 +309,17 @@ export default function Home() {
             </button>
 
             <div className="grid grid-cols-2 gap-2">
-              <div className="metric-card grid min-h-10 place-items-center gap-1 px-2 text-xs font-bold text-neutral-600 sm:min-h-12 lg:min-h-16" title={t.confidence}>
+              <button
+                className="metric-card grid min-h-10 place-items-center gap-1 px-2 text-xs font-bold text-neutral-600 transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-default disabled:hover:border-blue-100 disabled:hover:bg-white sm:min-h-12 lg:min-h-16"
+                type="button"
+                onClick={() => setIsReviewVisible((current) => !current)}
+                disabled={!result && !error}
+                aria-expanded={isReviewVisible}
+                title={t.confidence}
+              >
                 <span className="text-sm tabular-nums text-neutral-950">{result ? `${Math.round(result.confidence * 100)}%` : "--"}</span>
                 <span className="sr-only">{t.confidence}</span>
-              </div>
+              </button>
 
               <div
                 className={[
@@ -322,8 +333,8 @@ export default function Home() {
               </div>
             </div>
 
-            {result?.raw_text || result?.notes.length || error ? (
-              <div className="app-panel-muted hidden max-h-20 overflow-hidden p-2 text-xs leading-5 text-neutral-700 sm:block sm:max-h-24 sm:text-sm">
+            {isReviewVisible && (result?.raw_text || result?.notes.length || error) ? (
+              <div className="app-panel-muted max-h-20 overflow-hidden p-2 text-xs leading-5 text-neutral-700 sm:max-h-24 sm:text-sm">
                 {error ? <p className="m-0 text-red-700">{error}</p> : null}
                 {result?.raw_text ? (
                   <p className="m-0 line-clamp-2">
