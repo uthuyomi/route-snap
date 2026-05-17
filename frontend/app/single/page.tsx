@@ -2,7 +2,7 @@
 
 import { Camera, Check, ExternalLink, ImagePlus, Loader2, Navigation, RotateCcw, ScanText, XCircle } from "lucide-react";
 import Image from "next/image";
-import { ChangeEvent, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
 import { prepareImageForUpload } from "../lib/imageUpload";
 import { usePreferredLocale } from "../lib/locale";
@@ -103,18 +103,41 @@ export default function Home() {
   const libraryInputRef = useRef<HTMLInputElement | null>(null);
   const preparedImageRef = useRef<Promise<File> | null>(null);
   const activeReadIdRef = useRef(0);
+  const clearGuardTimerRef = useRef<number | null>(null);
   const [locale, setLocale] = usePreferredLocale();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<AddressResult | null>(null);
   const [manualAddress, setManualAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isClearGuarded, setIsClearGuarded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const t = messages[locale];
   const activeAddress = (manualAddress || result?.normalized_address || "").trim();
+  const canReset = Boolean(imageFile || result || manualAddress || error) && !isLoading && !isClearGuarded;
+
+  useEffect(() => {
+    return () => {
+      if (clearGuardTimerRef.current) {
+        window.clearTimeout(clearGuardTimerRef.current);
+      }
+    };
+  }, []);
+
+  function guardClearFor(milliseconds: number) {
+    setIsClearGuarded(true);
+    if (clearGuardTimerRef.current) {
+      window.clearTimeout(clearGuardTimerRef.current);
+    }
+    clearGuardTimerRef.current = window.setTimeout(() => {
+      setIsClearGuarded(false);
+      clearGuardTimerRef.current = null;
+    }, milliseconds);
+  }
 
   function resetCapture() {
+    if (isLoading || isClearGuarded) return;
     activeReadIdRef.current += 1;
     setImageFile(null);
     setPreviewUrl(null);
@@ -146,6 +169,7 @@ export default function Home() {
     setError(null);
     const readId = activeReadIdRef.current + 1;
     activeReadIdRef.current = readId;
+    guardClearFor(1800);
     analyzeImage(file, preparedImage, readId);
   }
 
@@ -180,7 +204,7 @@ export default function Home() {
 
       if (readId !== activeReadIdRef.current) return;
       setResult(payload);
-      setManualAddress(payload.normalized_address ?? "");
+      setManualAddress((current) => payload.normalized_address?.trim() || current);
 
     } catch (caught) {
       if (readId !== activeReadIdRef.current) return;
@@ -188,6 +212,7 @@ export default function Home() {
     } finally {
       if (readId === activeReadIdRef.current) {
         setIsLoading(false);
+        guardClearFor(1000);
       }
     }
   }
@@ -226,7 +251,7 @@ export default function Home() {
                 <span className="grid h-10 w-10 place-items-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600" title={imageFile ? t.readyPhoto : t.noPhoto} aria-label={imageFile ? t.readyPhoto : t.noPhoto}>
                   {imageFile ? <Check size={16} aria-hidden="true" /> : <XCircle size={16} aria-hidden="true" />}
                 </span>
-                <button className={headerButtonClass(Boolean(imageFile || result || manualAddress || error))} type="button" onClick={resetCapture} disabled={!imageFile && !result && !manualAddress && !error} aria-label={t.resetAria} title={t.resetAria}>
+                <button className={headerButtonClass(canReset)} type="button" onClick={resetCapture} disabled={!canReset} aria-label={t.resetAria} title={t.resetAria}>
                   <RotateCcw size={18} aria-hidden="true" />
                   <span className="sr-only">{t.reset}</span>
                 </button>

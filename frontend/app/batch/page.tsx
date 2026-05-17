@@ -263,6 +263,7 @@ export default function BatchRoutePage() {
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const previewUrlsRef = useRef<string[]>([]);
   const activeReadIdRef = useRef(0);
+  const clearGuardTimerRef = useRef<number | null>(null);
   const [locale, setLocale] = usePreferredLocale();
   const [stops, setStops] = useState<BatchStop[]>([]);
   const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([]);
@@ -270,6 +271,7 @@ export default function BatchRoutePage() {
   const [routeMode, setRouteMode] = useState<RouteMode>("file");
   const [notes, setNotes] = useState("");
   const [isReading, setIsReading] = useState(false);
+  const [isClearGuarded, setIsClearGuarded] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [routeNotes, setRouteNotes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -288,15 +290,29 @@ export default function BatchRoutePage() {
   const routeAddresses = useMemo(() => orderedStops.map((stop) => stop.address.trim()).filter(Boolean), [orderedStops]);
   const mapsUrl = useMemo(() => buildRouteMapsUrl(routeAddresses), [routeAddresses]);
   const activeImagePreview = imagePreviews.length ? imagePreviews[imagePreviews.length - 1] : null;
-  const canClear = Boolean(stops.length || imagePreviews.length || routeOrderIds.length || notes || routeNotes.length || error);
+  const canClear = Boolean(stops.length || imagePreviews.length || routeOrderIds.length || notes || routeNotes.length || error) && !isReading && !isOptimizing && !isClearGuarded;
   const hasIndividualInstructions = useMemo(() => stops.some((stop) => stop.routeNote.trim()), [stops]);
 
   useEffect(() => {
     const previewUrls = previewUrlsRef.current;
     return () => {
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      if (clearGuardTimerRef.current) {
+        window.clearTimeout(clearGuardTimerRef.current);
+      }
     };
   }, []);
+
+  function guardClearFor(milliseconds: number) {
+    setIsClearGuarded(true);
+    if (clearGuardTimerRef.current) {
+      window.clearTimeout(clearGuardTimerRef.current);
+    }
+    clearGuardTimerRef.current = window.setTimeout(() => {
+      setIsClearGuarded(false);
+      clearGuardTimerRef.current = null;
+    }, milliseconds);
+  }
 
   function clearInputs() {
     if (fileInputRef.current) {
@@ -308,6 +324,7 @@ export default function BatchRoutePage() {
   }
 
   function clearWorkspace() {
+    if (!canClear) return;
     activeReadIdRef.current += 1;
     previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     previewUrlsRef.current = [];
@@ -469,6 +486,7 @@ export default function BatchRoutePage() {
     setRouteNotes([]);
     const readId = activeReadIdRef.current + 1;
     activeReadIdRef.current = readId;
+    guardClearFor(1800);
 
     try {
       const imageFiles: File[] = [];
@@ -506,6 +524,7 @@ export default function BatchRoutePage() {
       if (readId === activeReadIdRef.current) {
         setIsReading(false);
         clearInputs();
+        guardClearFor(1000);
       }
     }
   }
