@@ -1,7 +1,7 @@
 ﻿"use client";
 
+/* eslint-disable @next/next/no-img-element */
 import { Camera, Check, ExternalLink, ImagePlus, Loader2, Navigation, RotateCcw, ScanText, XCircle } from "lucide-react";
-import Image from "next/image";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
 import { fetchWithAuth } from "../lib/authFetch";
@@ -261,7 +261,7 @@ export default function Home() {
 
             <div className="media-stage lg:aspect-[4/3]">
               {previewUrl ? (
-                <Image className="object-contain" src={previewUrl} alt={t.imageAlt} fill sizes="(min-width: 1024px) 620px, 100vw" unoptimized />
+                <img className="h-full w-full object-contain" src={previewUrl} alt={t.imageAlt} />
               ) : (
                 <div className="media-empty">
                   <div className="grid w-full max-w-sm gap-3">

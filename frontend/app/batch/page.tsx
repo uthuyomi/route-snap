@@ -1,7 +1,7 @@
 ﻿"use client";
 
+/* eslint-disable @next/next/no-img-element */
 import { AlertCircle, ArrowUpDown, Bot, Camera, Check, ExternalLink, GripVertical, Loader2, Navigation, RotateCcw, Trash2, Upload, XCircle } from "lucide-react";
-import Image from "next/image";
 import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
 import { fetchWithAuth } from "../lib/authFetch";
@@ -708,14 +708,7 @@ export default function BatchRoutePage() {
 
             <div className="media-stage min-h-72 lg:aspect-[4/3]" aria-label={t.imagePreview}>
               {activeImagePreview ? (
-                <Image
-                  className="object-contain"
-                  src={activeImagePreview.url}
-                  alt={`${t.previewAlt}: ${activeImagePreview.name}`}
-                  fill
-                  sizes="(min-width: 1024px) 620px, 100vw"
-                  unoptimized
-                />
+                <img className="h-full w-full object-contain" src={activeImagePreview.url} alt={`${t.previewAlt}: ${activeImagePreview.name}`} />
               ) : (
                 <div className="media-empty min-h-72">
                   <div className="grid w-full max-w-sm gap-3">
@@ -774,7 +767,7 @@ export default function BatchRoutePage() {
                     {imagePreviews.map((preview) => (
                       <figure key={preview.id} className="m-0 overflow-hidden rounded-lg border border-neutral-200 bg-white/80 shadow-sm">
                         <div className="relative aspect-[4/3] bg-white">
-                          <Image className="object-contain" src={preview.url} alt={`${t.previewAlt}: ${preview.name}`} fill sizes="120px" unoptimized />
+                          <img className="h-full w-full object-contain" src={preview.url} alt={`${t.previewAlt}: ${preview.name}`} />
                         </div>
                         <figcaption className="truncate px-2 py-1 text-xs font-bold text-neutral-500" title={preview.name}>
                           {preview.name}
