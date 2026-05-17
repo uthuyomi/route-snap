@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "../../../lib/server/supabase";
 import { getAppUrl, getStripe } from "../../../lib/server/stripe";
 import { getCurrentUser } from "../../../lib/server/usage";
 
 export const runtime = "nodejs";
 
-export async function POST() {
-  const user = await getCurrentUser();
+export async function POST(request: NextRequest) {
+  const user = await getCurrentUser(request);
   if (!user) {
     return NextResponse.json({ detail: "Login required" }, { status: 401 });
   }
@@ -34,4 +35,3 @@ export async function POST() {
 
   return NextResponse.json({ url: session.url });
 }
-

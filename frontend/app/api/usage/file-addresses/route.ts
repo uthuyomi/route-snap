@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true });
     }
 
-    const quota = await checkQuota("fileStops", count);
+    const quota = await checkQuota("fileStops", count, request);
     if (!quota.allowed || !quota.subject || !quota.periodKey) {
       return NextResponse.json({ detail: quota.detail }, { status: quota.status });
     }

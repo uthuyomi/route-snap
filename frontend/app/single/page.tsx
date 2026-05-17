@@ -4,6 +4,7 @@ import { Camera, Check, ExternalLink, ImagePlus, Loader2, Navigation, RotateCcw,
 import Image from "next/image";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
+import { fetchWithAuth } from "../lib/authFetch";
 import { prepareImageForUpload } from "../lib/imageUpload";
 import { usePreferredLocale } from "../lib/locale";
 import { buildSingleMapsUrl, getCurrentPosition } from "../lib/maps";
@@ -188,7 +189,7 @@ export default function Home() {
       formData.append("image", uploadFile);
       formData.append("locale", locale);
 
-      const response = await fetch("/api/parse-address", {
+      const response = await fetchWithAuth("/api/parse-address", {
         method: "POST",
         body: formData
       });

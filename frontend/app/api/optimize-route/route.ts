@@ -9,7 +9,7 @@ const routeSnapApiToken = process.env.ROUTE_SNAP_API_TOKEN;
 
 export async function POST(request: NextRequest) {
   try {
-    const quota = await checkQuota("routeRuns", 1);
+    const quota = await checkQuota("routeRuns", 1, request);
     if (!quota.allowed || !quota.subject || !quota.periodKey) {
       return NextResponse.json({ detail: quota.detail }, { status: quota.status });
     }

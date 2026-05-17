@@ -58,10 +58,7 @@ async function expireOpenCheckoutSessions(stripe: Stripe, customerId: string) {
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
   const admin = createSupabaseAdminClient();
-  const authorization = request.headers.get("authorization");
-  const token = authorization?.startsWith("Bearer ") ? authorization.slice("Bearer ".length) : null;
-  const tokenUser = token && admin ? (await admin.auth.getUser(token)).data.user : null;
-  const user = tokenUser ?? await getCurrentUser();
+  const user = await getCurrentUser(request);
   if (!user) {
     return NextResponse.json({ detail: "Login required" }, { status: 401 });
   }

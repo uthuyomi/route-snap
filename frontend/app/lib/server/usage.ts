@@ -50,7 +50,29 @@ function isUnlimitedEmail(email: string | null | undefined) {
   return allowedEmails.includes(email.trim().toLowerCase());
 }
 
-async function getUsageSubject(): Promise<UsageSubject> {
+async function getTokenUser(request?: { headers: Headers }) {
+  const authorization = request?.headers.get("authorization") ?? "";
+  const token = authorization.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : "";
+  if (!token) return null;
+
+  const admin = createSupabaseAdminClient();
+  if (!admin) return null;
+
+  const { data } = await admin.auth.getUser(token);
+  return data.user ?? null;
+}
+
+async function getUsageSubject(request?: { headers: Headers }): Promise<UsageSubject> {
+  const tokenUser = await getTokenUser(request);
+  if (tokenUser) {
+    return {
+      type: "user",
+      id: tokenUser.id,
+      userId: tokenUser.id,
+      email: tokenUser.email ?? null
+    };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
 
@@ -135,7 +157,10 @@ export async function requireLogin() {
   return subject.userId;
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(request?: { headers: Headers }) {
+  const tokenUser = await getTokenUser(request);
+  if (tokenUser) return tokenUser;
+
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
@@ -143,7 +168,7 @@ export async function getCurrentUser() {
   return data.user ?? null;
 }
 
-export async function checkQuota(meter: MeterKey, amount = 1): Promise<QuotaCheck> {
+export async function checkQuota(meter: MeterKey, amount = 1, request?: { headers: Headers }): Promise<QuotaCheck> {
   if (!isSupabaseAdminConfigured() && process.env.NODE_ENV === "production") {
     return {
       allowed: false,
@@ -152,7 +177,7 @@ export async function checkQuota(meter: MeterKey, amount = 1): Promise<QuotaChec
     };
   }
 
-  const subject = await getUsageSubject();
+  const subject = await getUsageSubject(request);
   const activePeriodKey = periodKey();
 
   if (isUnlimitedEmail(subject.email)) {

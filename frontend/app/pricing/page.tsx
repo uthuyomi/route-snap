@@ -1,11 +1,10 @@
 "use client";
-
-import { createClient } from "@supabase/supabase-js";
 import { ArrowRight, BriefcaseBusiness, Check, CreditCard, FileText, Image as ImageIcon, MapPinned, MonitorDown, Route, ShieldCheck, Smartphone, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { AppLocale } from "../components/AppHeader";
 import { SiteFooter, SiteHeader } from "../components/SiteChrome";
+import { fetchWithAuth } from "../lib/authFetch";
 import { useVisitorLocale } from "../lib/locale";
 import { PlanId } from "../lib/plans";
 
@@ -133,12 +132,6 @@ export default function PricingPage() {
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null);
   const [checkoutError, setCheckoutError] = useState("");
   const t = messages[locale];
-  const supabase = useMemo(() => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !supabaseAnonKey) return null;
-    return createClient(supabaseUrl, supabaseAnonKey);
-  }, []);
 
   const plans = [
     { id: "free" as const, name: t.free, price: 0, imageOcr: 5, fileStops: 30, routeRuns: 3, fit: t.freeFit, usage: t.freeUsage, highlighted: false },
@@ -169,12 +162,10 @@ export default function PricingPage() {
     }
 
     setLoadingPlan(planId);
-    const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
-    const response = await fetch("/api/stripe/checkout", {
+    const response = await fetchWithAuth("/api/stripe/checkout", {
       method: "POST",
       headers: {
-        "content-type": "application/json",
-        ...(data.session?.access_token ? { authorization: `Bearer ${data.session.access_token}` } : {})
+        "content-type": "application/json"
       },
       body: JSON.stringify({ planId })
     });

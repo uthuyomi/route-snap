@@ -4,6 +4,7 @@ import { AlertCircle, ArrowUpDown, Bot, Camera, Check, ExternalLink, GripVertica
 import Image from "next/image";
 import { ChangeEvent, DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import { AppHeader, AppLocale } from "../components/AppHeader";
+import { fetchWithAuth } from "../lib/authFetch";
 import { prepareImageForUpload } from "../lib/imageUpload";
 import { usePreferredLocale } from "../lib/locale";
 import { buildRouteMapsUrl, getCurrentPosition } from "../lib/maps";
@@ -362,7 +363,7 @@ export default function BatchRoutePage() {
       formData.append("locale", locale);
       formData.append("notes", notes);
 
-      const response = await fetch("/api/parse-addresses", {
+      const response = await fetchWithAuth("/api/parse-addresses", {
         method: "POST",
         body: formData
       });
@@ -457,7 +458,7 @@ export default function BatchRoutePage() {
       return;
     }
 
-    const usageResponse = await fetch("/api/usage/file-addresses", {
+    const usageResponse = await fetchWithAuth("/api/usage/file-addresses", {
       method: "POST",
       headers: {
         "content-type": "application/json"
@@ -627,7 +628,7 @@ export default function BatchRoutePage() {
 
     try {
       const origin = await getCurrentPosition();
-      const response = await fetch("/api/optimize-route", {
+      const response = await fetchWithAuth("/api/optimize-route", {
         method: "POST",
         headers: {
           "content-type": "application/json"

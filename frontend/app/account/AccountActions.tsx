@@ -3,6 +3,7 @@
 import { CreditCard, LogOut } from "lucide-react";
 import { useState } from "react";
 import { LogoutControl } from "../components/LogoutControl";
+import { fetchWithAuth } from "../lib/authFetch";
 
 type AccountActionsProps = {
   manageLabel: string;
@@ -14,7 +15,7 @@ export function AccountActions({ manageLabel, logoutLabel }: AccountActionsProps
 
   async function openPortal() {
     setIsLoading(true);
-    const response = await fetch("/api/stripe/portal", { method: "POST" });
+    const response = await fetchWithAuth("/api/stripe/portal", { method: "POST" });
     const payload = (await response.json()) as { url?: string; detail?: string };
     setIsLoading(false);
 
